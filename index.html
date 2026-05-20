@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สรุปออร์เดอร์ขนม</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="max-w-6xl mx-auto p-4 py-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-600 flex items-center gap-2">
+                    📦 สรุปออร์เดอร์
+                </h1>
+                <p class="text-slate-500 mt-1">ข้อมูลอัปเดตอัตโนมัติจาก Google Sheets</p>
+            </div>
+            <button onclick="fetchData()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg shadow-sm font-medium transition-colors flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                รีเฟรชข้อมูล
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="flex flex-col items-center justify-center py-20">
+            <div class="loader mb-4"></div>
+            <p class="text-slate-500">กำลังโหลดข้อมูล...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="hidden bg-red-50 text-red-600 p-4 rounded-xl mb-6 border border-red-200">
+            เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง
+        </div>
+
+        <!-- Main Content (Hidden initially) -->
+        <div id="content" class="hidden space-y-8">
+
+            <!-- Section 2: Total Summary -->
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-blue-50 px-6 py-4 border-b border-slate-200">
+                    <h2 class="text-xl font-semibold text-blue-800 flex items-center gap-2">
+                        📊 สรุปยอดรวมสินค้าทั้งหมด
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div id="total-summary-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Total items will be injected here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 1: Individual Orders -->
+            <section>
+                <h2 class="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2 px-2">
+                    👥 สรุปรายการรายบุคคล
+                </h2>
+                <div id="individual-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Individual cards will be injected here -->
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script>
+        // URL ของ Google Sheets ที่เปลี่ยนเป็นแบบ CSV เพื่อให้อ่านข้อมูลง่ายขึ้น
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmBgGVxDm0IRwAo-pcv9wQrpm_9GZHKPb9VYmPTXO-RHzm4grNzIkhwEOrr7l2vk5xgKuEuQgNkhgn/pub?output=csv";
+
+        // กำหนด Index ของแต่ละคอลัมน์ (0-based: A=0, B=1, C=2...)
+        const COL_NAME = 1; // B
+        const COL_AMOUNT = 2; // C
+
+        const ITEMS_CONFIG = [
+            { name: "เค้กเนยสด", fullName: "เค้กเนยสด เค้กบ้านสวน", index: 4, icon: "🍰" }, // E
+            { name: "เค้กกาแฟ", fullName: "เค้กกาแฟ เค้กบ้านสวน", index: 5, icon: "☕" }, // F
+            { name: "คัพเค้กธัญพืช", fullName: "คัพเค้กธัญพืช เค้กบ้านสวน", index: 6, icon: "🧁" }, // G
+            { name: "เค้กใบเตย", fullName: "เค้กใบเตย เค้กบ้านสวน", index: 7, icon: "🌿" }, // H
+            { name: "เค้กส้ม", fullName: "เค้กส้ม เค้กบ้านสวน", index: 8, icon: "🍊" }, // I
+            { name: "เค้กสตอเบอรี่", fullName: "เค้กสตอเบอรี่ เค้กบ้านสวน", index: 9, icon: "🍓" }, // J
+            { name: "เค้กกาแฟอัลมอนด์", fullName: "เค้กกาแฟอัลมอนด์ เค้กบ้านสวน", index: 10, icon: "🥜" }, // K
+            { name: "เค้กฝอยทอง", fullName: "เค้กฝอยทอง เค้กบ้านสวน", index: 11, icon: "✨" }, // L
+            { name: "เค้กช็อคโกแลต", fullName: "เค้กช็อคโกแลต เค้กบ้านสวน", index: 12, icon: "🍫" }, // M
+            { name: "เค้กชีส", fullName: "เค้กชีส เค้กบ้านสวน", index: 13, icon: "🧀" }, // N
+            { name: "เค้กครีมฝอยทอง", fullName: "เค้กครีมฝอยทอง เค้กบ้านสวน", index: 14, icon: "🍮" }, // O
+            { name: "สายใหม เล็ก", fullName: "โรตี สายใหม เล็ก", index: 15, icon: "🌯" }, // P
+            { name: "สายใหม กลาง", fullName: "โรตี สายใหม กลาง", index: 16, icon: "🌯" }, // Q
+            { name: "สายใหม ใหญ่", fullName: "โรตี สายใหม ใหญ่", index: 17, icon: "🌯" }  // R
+        ];
+
+        // ฟังก์ชันอ่านไฟล์ CSV แบบง่าย (รองรับการมีเครื่องหมายคำพูดในข้อมูล)
+        function parseCSV(str) {
+            const arr = [];
+            let quote = false;
+            let col = "", c;
+            let row = [];
+            for (let i = 0; i < str.length; i++) {
+                c = str[i];
+                if (c === '"' && str[i+1] === '"') { col += '"'; i++; }
+                else if (c === '"') { quote = !quote; }
+                else if (c === ',' && !quote) { row.push(col.trim()); col = ""; }
+                else if (c === '\n' && !quote) { row.push(col.trim()); arr.push(row); col = ""; row = []; }
+                else if (c === '\r' && !quote) { /* ignore */ }
+                else { col += c; }
+            }
+            if (col !== "") row.push(col.trim());
+            if (row.length > 0) arr.push(row);
+            return arr;
+        }
+
+        async function fetchData() {
+            // แสดง Loading
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('content').classList.add('hidden');
+            document.getElementById('error').classList.add('hidden');
+
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                if (!response.ok) throw new Error("Network response was not ok");
+                
+                const csvText = await response.text();
+                const rows = parseCSV(csvText);
+                
+                processAndRenderData(rows);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('error').classList.remove('hidden');
+            }
+        }
+
+        function processAndRenderData(rows) {
+            // ตัดแถวแรกทิ้ง (หัวตาราง)
+            const dataRows = rows.slice(1);
+            
+            let totalSummary = {};
+            ITEMS_CONFIG.forEach(item => totalSummary[item.fullName] = { qty: 0, icon: item.icon, name: item.name });
+            
+            const individualOrdersHTML = [];
+
+            dataRows.forEach(row => {
+                const name = row[COL_NAME];
+                const amount = row[COL_AMOUNT];
+
+                // ข้ามแถวที่ไม่มีชื่อผู้ฝาก
+                if (!name || name === "") return;
+
+                let userItemsHTML = "";
+                let hasOrder = false;
+
+                ITEMS_CONFIG.forEach(item => {
+                    // อ่านจำนวน และแปลงเป็นตัวเลข (ถ้าว่างหรือแปลงไม่ได้ให้เป็น 0)
+                    const qtyStr = row[item.index];
+                    const qty = parseInt(qtyStr, 10) || 0;
+
+                    if (qty > 0) {
+                        hasOrder = true;
+                        // เพิ่มยอดรวม
+                        totalSummary[item.fullName].qty += qty;
+                        
+                        // สร้าง HTML สำหรับรายการรายบุคคล
+                        userItemsHTML += `
+                            <div class="flex justify-between items-center py-1 border-b border-slate-100 last:border-0 text-sm">
+                                <span class="text-slate-600">${item.icon} ${item.name}</span>
+                                <span class="font-medium bg-slate-100 px-2 py-0.5 rounded text-slate-800">${qty}</span>
+                            </div>
+                        `;
+                    }
+                });
+
+                // หากมีรายการสั่งซื้อ ให้สร้าง Card
+                if (hasOrder) {
+                    const formattedAmount = amount ? amount : "-";
+                    individualOrdersHTML.push(`
+                        <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-slate-200 overflow-hidden">
+                            <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                                <div class="font-semibold text-slate-800 flex items-center gap-2">
+                                    <span class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-sm">👤</span>
+                                    ${name}
+                                </div>
+                                <div class="text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
+                                    💰 ${formattedAmount} ฿
+                                </div>
+                            </div>
+                            <div class="p-4 space-y-1">
+                                ${userItemsHTML}
+                            </div>
+                        </div>
+                    `);
+                }
+            });
+
+            // สร้าง HTML สำหรับยอดรวมทั้งหมด
+            let totalSummaryHTML = "";
+            let hasAnyTotalOrder = false;
+            Object.values(totalSummary).forEach(item => {
+                if (item.qty > 0) {
+                    hasAnyTotalOrder = true;
+                    totalSummaryHTML += `
+                        <div class="bg-white border border-slate-100 rounded-lg p-4 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden group hover:border-blue-200 transition-colors">
+                            <div class="text-3xl mb-2 z-10">${item.icon}</div>
+                            <div class="text-slate-600 text-sm font-medium z-10">${item.name}</div>
+                            <div class="text-2xl font-bold text-blue-600 mt-1 z-10">${item.qty}</div>
+                            <div class="absolute -bottom-4 -right-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">${item.icon}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // อัปเดต DOM
+            const individualContainer = document.getElementById('individual-orders-grid');
+            const totalContainer = document.getElementById('total-summary-grid');
+
+            if (individualOrdersHTML.length > 0) {
+                individualContainer.innerHTML = individualOrdersHTML.join('');
+            } else {
+                individualContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 bg-white rounded-xl border border-slate-200">ยังไม่มีรายการสั่งซื้อ</div>`;
+            }
+
+            if (hasAnyTotalOrder) {
+                totalContainer.innerHTML = totalSummaryHTML;
+            } else {
+                totalContainer.innerHTML = `<div class="col-span-full text-center py-4 text-slate-500">ยังไม่มียอดรวมสินค้า</div>`;
+            }
+
+            // ซ่อน Loading แสดง Content
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('content').classList.remove('hidden');
+        }
+
+        // เรียกดึงข้อมูลครั้งแรกเมื่อโหลดหน้าเสร็จ
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
