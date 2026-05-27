@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* CSS เพิ่มเติมเล็กน้อยสำหรับ Animation สลับหน้าให้ดูสมูท */
         .animate-fade-in {
             animation: fadeIn 0.3s ease-in-out;
         }
@@ -16,9 +15,8 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* สไตล์สำหรับการพิมพ์ */
+        /* สไตล์สำหรับการพิมพ์และ PDF (ขนาด A4) */
         @media print {
-            /* ซ่อนทุกอย่างยกเว้นพื้นที่พิมพ์ */
             body * {
                 visibility: hidden;
             }
@@ -31,24 +29,14 @@
                 top: 0;
                 width: 100%;
                 background-color: white;
-                padding: 20px;
                 color: black;
+                display: block !important;
             }
-            /* กำหนดสไตล์เส้นตารางตอนพิมพ์ให้ชัดเจน */
-            #printArea table {
+            #export-table {
                 width: 100%;
                 border-collapse: collapse;
             }
-            #printArea th, #printArea td {
-                border: 1px solid black !important;
-                padding: 6px;
-                font-size: 14pt;
-            }
-            #printArea th {
-                background-color: #f3f4f6 !important;
-                -webkit-print-color-adjust: exact;
-            }
-            /* ซ่อนเงาและสีพื้นหลังที่ไม่จำเป็น */
+            /* ยกเลิกแสงเงาหรือสีพื้นหลังเวลาพิมพ์ */
             .shadow-sm, .shadow-lg, .rounded-xl, .bg-gray-100 {
                 box-shadow: none !important;
                 border-radius: 0 !important;
@@ -89,7 +77,7 @@
         }
 
         // ==========================================
-        // ส่วนที่ 2: โค้ดเดิมสำหรับหน้าที่ 1 
+        // ส่วนที่ 2: โค้ดสำหรับหน้าที่ 1 
         // ==========================================
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzTjgn2mQikdi9DZfVXAznc27G23QztHeU3cjayBt8GH8xBXKYGr7L4xRcH9TO0qww/exec'; 
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwEPCXGtFB7LtfQRfZNlKBumngH991g7-gBsxAG1iFe_OwZEVDGBLtYP_U7nygjlSmIwb4IId9AFTF/pub?gid=1608950220&single=true&output=csv';
@@ -98,7 +86,7 @@
         let staffData = {}; 
         let itemsList = [];
         let savedRecords = []; 
-        let currentServicePoint = ""; // เก็บจุดบริการชั่วคราวสำหรับหน้า 2
+        let currentServicePoint = ""; 
 
         let receiptOptionsHtml = '';
         for(let i=1; i<=100; i++) {
@@ -342,9 +330,7 @@
             let BahtText = "";
             let data = Number.split(".");
             if (data.length == 2) {
-                if (data[1].length == 1) {
-                    data[1] += "0";
-                }
+                if (data[1].length == 1) data[1] += "0";
             } else {
                 data.push("00");
             }
@@ -375,7 +361,6 @@
             }
 
             let bahtInt = data[0];
-            // จัดการกรณีตัวเลขเยอะๆ (หลักล้านขึ้นไป)
             if(bahtInt.length > 6) {
                 let mils = bahtInt.substring(0, bahtInt.length - 6);
                 let rests = bahtInt.substring(bahtInt.length - 6);
@@ -422,7 +407,7 @@
                 savedRecords = rows.filter(r => r.length >= 9 && r[0] && r[0].trim() !== '');
 
                 const dates = new Set();
-                savedRecords.forEach(r => dates.add(r[0].trim())); // Col A: Date
+                savedRecords.forEach(r => dates.add(r[0].trim())); // Col A: Date (พ.ศ.)
 
                 updateSelectOptions('p2-date', dates, '-- เลือกวันที่ --');
                 updateSelectOptions('p2-staff', new Set(), '-- เลือกเจ้าหน้าที่ --');
@@ -463,7 +448,7 @@
             const staffs = new Set();
             savedRecords.forEach(r => {
                 if (r[0].trim() === date && r[3] && r[3].trim() !== '') {
-                    staffs.add(r[3].trim()); // Col D: Staff
+                    staffs.add(r[3].trim()); // Col D: Staff Name
                 }
             });
             
@@ -533,10 +518,10 @@
             );
 
             let groups = {}; 
-            currentServicePoint = ""; // เคลียร์จุดบริการก่อน
+            currentServicePoint = ""; 
 
             filtered.forEach(r => {
-                if(!currentServicePoint && r[2]) currentServicePoint = r[2].trim(); // ดึง Col C: จุดบริการ
+                if(!currentServicePoint && r[2]) currentServicePoint = r[2].trim(); // Col C: จุดบริการ
 
                 let bookNo = r[5] ? r[5].trim() : '';
                 let receiptStr = r[6] ? r[6].trim() : '';
@@ -552,11 +537,10 @@
                 let parsedNums = parseReceipts(receiptStr);
                 parsedNums.forEach(n => groups[bookNo].receipts.add(n));
 
-                // เช็ค QR (ถ้ามีคำว่า qr หรือ QR ในรายการ)
-                let isQR = item.toUpperCase().includes('QR');
+                // เช็คว่าเป็นรายการ QR-Code หรือไม่
+                let isQR = item.toUpperCase().includes('QR-CODE') || item.toUpperCase().includes('QR');
 
-                // ถ้ารายการชื่อเหมือนกัน แต่คนละประเภท (เงินสด/QR) เราต้องแยกก้อน
-                // แต่ถ้าชื่อมีคำว่า QR อยู่แล้ว มันจะแยกให้เองโดยชื่อ
+                // รวมยอดหากชื่อรายการ (item) เหมือนกัน
                 if(!groups[bookNo].items[item]) {
                     groups[bookNo].items[item] = { amount: 0, isQR: isQR };
                 }
@@ -579,7 +563,7 @@
                 let g = groups[bookNo];
                 
                 let receiptArray = Array.from(g.receipts);
-                let receiptFormatted = formatReceiptRanges(receiptArray);
+                let receiptFormatted = formatReceiptRanges(receiptArray); // สรุปเป็นช่วงเช่น 001-020
 
                 let itemKeys = Object.keys(g.items).sort();
                 itemKeys.forEach((item, index) => {
@@ -593,7 +577,7 @@
                     let cashStr = cashAmt > 0 ? cashAmt.toLocaleString('en-US', {minimumFractionDigits:2}) : '-';
                     let qrStr = qrAmt > 0 ? qrAmt.toLocaleString('en-US', {minimumFractionDigits:2}) : '-';
 
-                    // สร้าง HTML 2 ชุด (สำหรับหน้าจอปกติ และ สำหรับพิมพ์)
+                    // HTML สำหรับหน้าจอ
                     let rowHtml = '';
                     if (index === 0) {
                         rowHtml = `
@@ -610,15 +594,30 @@
                             <td class="p-2 md:p-3 text-right">${qrStr}</td>
                         `;
                     }
-
                     let tr = document.createElement('tr');
                     tr.className = "border-b hover:bg-gray-50";
                     tr.innerHTML = rowHtml;
                     tbody.appendChild(tr);
 
-                    // สร้างบรรทัดสำหรับหน้าพิมพ์
+                    // HTML สำหรับพิมพ์/Excel (ใช้ Inline Style เพื่อให้เส้นตารางติดไปกับ Excel)
+                    let printRowHtml = '';
+                    if (index === 0) {
+                        printRowHtml = `
+                            <td style="border: 1px solid black; padding: 8px; text-align: center; vertical-align: top;" rowspan="${itemKeys.length}">${bookNo}</td>
+                            <td style="border: 1px solid black; padding: 8px; text-align: center; vertical-align: top;" rowspan="${itemKeys.length}">${receiptFormatted}</td>
+                            <td style="border: 1px solid black; padding: 8px;">${item}</td>
+                            <td style="border: 1px solid black; padding: 8px; text-align: right;">${cashStr}</td>
+                            <td style="border: 1px solid black; padding: 8px; text-align: right;">${qrStr}</td>
+                        `;
+                    } else {
+                        printRowHtml = `
+                            <td style="border: 1px solid black; padding: 8px;">${item}</td>
+                            <td style="border: 1px solid black; padding: 8px; text-align: right;">${cashStr}</td>
+                            <td style="border: 1px solid black; padding: 8px; text-align: right;">${qrStr}</td>
+                        `;
+                    }
                     let printTr = document.createElement('tr');
-                    printTr.innerHTML = rowHtml;
+                    printTr.innerHTML = printRowHtml;
                     printTbody.appendChild(printTr);
                 });
             });
@@ -636,7 +635,7 @@
             document.getElementById('p2-totalQR').innerText = totalQR.toLocaleString('en-US', {minimumFractionDigits:2});
             document.getElementById('p2-totalAll').innerText = grandTotal.toLocaleString('en-US', {minimumFractionDigits:2});
 
-            // อัปเดตข้อมูลในหน้า Print
+            // อัปเดตข้อมูลในหน้า Print/Excel
             document.getElementById('print-servicePoint').innerText = currentServicePoint;
             document.getElementById('print-shift').innerText = selShift;
             document.getElementById('print-date').innerText = formatThaiDateFull(selDate);
@@ -657,11 +656,12 @@
             window.print();
         }
 
-        // ฟังก์ชันส่งออกเป็น Excel แบบง่ายผ่าน HTML Table
         function exportExcel() {
             const table = document.getElementById("export-table");
+            
+            // HTML ของตารางที่มี Header เรียบร้อยแล้ว (จะดึงไปทั้งดุ้น)
             let html = table.outerHTML;
-            // เพิ่ม Meta Tag เพื่อรองรับภาษาไทยใน Excel
+            
             let dataUri = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent('<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"></head><body>' + html + '</body></html>');
             
             const dateStr = document.getElementById('p2-date').value.replace(/\//g, '-');
@@ -709,7 +709,7 @@
             </div>
         </div>
         <!-- Mobile Menu -->
-        <div class="md:hidden bg-blue-800 flex justify-around p-2">
+        <div class="md:hidden bg-blue-800 flex justify-around p-2 print-hide">
             <button id="tab1-mobile" onclick="showPage('page1')" class="text-white text-xs py-2 px-3 rounded bg-blue-600 font-bold"><i class="fa-solid fa-pen-to-square block mb-1"></i>บันทึก</button>
             <button id="tab2-mobile" onclick="showPage('page2')" class="text-blue-200 text-xs py-2 px-3 rounded hover:bg-blue-700"><i class="fa-solid fa-file-invoice-dollar block mb-1"></i>ใบนำส่ง</button>
             <button id="tab3-mobile" onclick="showPage('page3')" class="text-blue-200 text-xs py-2 px-3 rounded hover:bg-blue-700"><i class="fa-solid fa-chart-pie block mb-1"></i>สรุป</button>
@@ -720,9 +720,9 @@
     <div class="p-4 md:p-8 relative">
 
         <!-- ============================================== -->
-        <!-- หน้าที่ 1 : บันทึกรับเงินค่ารักษาพยาบาล (ฟอร์มเดิม) -->
+        <!-- หน้าที่ 1 : บันทึกรับเงินค่ารักษาพยาบาล -->
         <!-- ============================================== -->
-        <div id="page1" class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in">
+        <div id="page1" class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in print-hide">
             <div class="bg-blue-600 p-6 text-white text-center">
                 <h1 class="text-2xl font-bold">บันทึกรับเงินค่ารักษาพยาบาล</h1>
             </div>
@@ -806,7 +806,7 @@
         <!-- ============================================== -->
         <!-- หน้าที่ 2 : ใบนำส่งเงิน (สรุปข้อมูล) -->
         <!-- ============================================== -->
-        <div id="page2" class="hidden max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in relative">
+        <div id="page2" class="hidden max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in relative print-hide">
             
             <div id="loading-p2" class="absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center hidden">
                 <i class="fa-solid fa-spinner fa-spin text-4xl text-indigo-600 mb-4"></i>
@@ -815,9 +815,9 @@
 
             <div class="bg-indigo-600 p-6 text-white text-center flex justify-between items-center">
                 <div class="w-10"></div>
-                <h1 class="text-2xl font-bold">ใบนำส่งเงิน</h1>
+                <h1 class="text-2xl font-bold">1. ใบนำส่งเงิน</h1>
                 <button onclick="loadPage2Data()" class="bg-indigo-800 hover:bg-indigo-900 text-white px-3 py-1 rounded text-sm transition-colors" title="รีเฟรชข้อมูล">
-                    <i class="fa-solid fa-rotate-right"></i> โหลดข้อมูลล่าสุด
+                    <i class="fa-solid fa-rotate-right"></i> อัฟเดจข้อมูล
                 </button>
             </div>
             
@@ -871,10 +871,10 @@
                     <table class="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                             <tr class="bg-indigo-100 border-b border-indigo-200 text-indigo-900">
-                                <th class="p-3 w-28 border-r border-indigo-200 text-center align-middle" rowspan="2">เล่มที่ใบเสร็จ</th>
-                                <th class="p-3 w-40 border-r border-indigo-200 text-center align-middle" rowspan="2">เลขที่ใบเสร็จ</th>
-                                <th class="p-3 min-w-[200px] border-r border-indigo-200 align-middle" rowspan="2">รายการ</th>
-                                <th class="p-2 border-b border-indigo-200 text-center" colspan="2">จำนวนเงิน</th>
+                                <th class="p-3 w-28 border-r border-indigo-200 text-center align-middle" rowspan="2">4.1 เล่มที่ใบเสร็จ</th>
+                                <th class="p-3 w-40 border-r border-indigo-200 text-center align-middle" rowspan="2">4.2 เลขที่ใบเสร็จ</th>
+                                <th class="p-3 min-w-[200px] border-r border-indigo-200 align-middle" rowspan="2">4.3 รายการ</th>
+                                <th class="p-2 border-b border-indigo-200 text-center" colspan="2">4.4 จำนวนเงิน</th>
                             </tr>
                             <tr class="bg-indigo-50 border-b-2 border-indigo-200 text-indigo-900">
                                 <th class="p-2 w-32 border-r border-indigo-200 text-center">เงินสด</th>
@@ -909,31 +909,43 @@
         <!-- โครงสร้างสำหรับสั่ง Print / Export Excel (ซ่อนอยู่ตลอด) -->
         <!-- ============================================== -->
         <div id="printArea" class="hidden">
-            <div class="text-center font-bold text-xl mb-4 leading-relaxed">
-                สถานบริการสาธารณสุข โรงพยาบาลนางรองบันทึกการนำส่งเงิน<br>
-                จากจุดบริการ <span id="print-servicePoint">...</span><br>
-                เวร <span id="print-shift">...</span><br>
-                เรียน ผู้อำนวยการโรงพยาบาลนางรอง<br>
-                <span id="print-date">...</span>
-            </div>
-            
-            <table id="export-table" border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+            <table id="export-table" style="width:100%; border-collapse: collapse; text-align: left; font-family: sans-serif; font-size: 14pt; color: black;">
                 <thead>
                     <tr>
-                        <!-- แทรกหัวข้อที่ใช้ตอน Export Excel ลงใน Table ให้อ่านง่ายขึ้น -->
-                        <th colspan="5" style="border:none; text-align:center; display:none;">
+                        <th colspan="5" style="text-align: center; font-size: 18pt; font-weight: bold; border: none; padding-bottom: 15px;">
                             สถานบริการสาธารณสุข โรงพยาบาลนางรองบันทึกการนำส่งเงิน
                         </th>
                     </tr>
                     <tr>
-                        <th rowspan="2" style="text-align:center; padding:5px;">เล่มที่ใบเสร็จ</th>
-                        <th rowspan="2" style="text-align:center; padding:5px;">เลขที่ใบเสร็จ</th>
-                        <th rowspan="2" style="text-align:center; padding:5px;">รายการ</th>
-                        <th colspan="2" style="text-align:center; padding:5px;">จำนวนเงิน</th>
+                        <th colspan="5" style="text-align: left; font-size: 14pt; border: none; padding-bottom: 5px; font-weight: normal;">
+                            จากจุดบริการ <span id="print-servicePoint">...</span>
+                        </th>
                     </tr>
                     <tr>
-                        <th style="text-align:center; padding:5px;">เงินสด</th>
-                        <th style="text-align:center; padding:5px;">QR-Code</th>
+                        <th colspan="5" style="text-align: left; font-size: 14pt; border: none; padding-bottom: 5px; font-weight: normal;">
+                            เวร <span id="print-shift">...</span>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th colspan="5" style="text-align: left; font-size: 14pt; border: none; padding-bottom: 5px; font-weight: normal;">
+                            เรียน ผู้อำนวยการโรงพยาบาลนางรอง
+                        </th>
+                    </tr>
+                    <tr>
+                        <th colspan="5" style="text-align: left; font-size: 14pt; border: none; padding-bottom: 20px; font-weight: normal;">
+                            <span id="print-date">...</span>
+                        </th>
+                    </tr>
+                    <!-- ส่วนหัวตารางสำหรับพิมพ์ -->
+                    <tr>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px;">เล่มที่ใบเสร็จ</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px;">เลขที่ใบเสร็จ</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px;">รายการ</th>
+                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:8px;">จำนวนเงิน</th>
+                    </tr>
+                    <tr>
+                        <th style="border: 1px solid black; text-align:center; padding:8px;">เงินสด</th>
+                        <th style="border: 1px solid black; text-align:center; padding:8px;">QR-Code</th>
                     </tr>
                 </thead>
                 <tbody id="print-tbody">
@@ -941,38 +953,38 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <th colspan="3" style="text-align:right; padding:5px;">รวมเงินแต่ละประเภท:</th>
-                        <th style="text-align:right; padding:5px;" id="print-totalCash">0.00</th>
-                        <th style="text-align:right; padding:5px;" id="print-totalQR">0.00</th>
+                        <th colspan="3" style="border: 1px solid black; text-align:right; padding:8px;">รวมเงินแต่ละประเภท:</th>
+                        <th style="border: 1px solid black; text-align:right; padding:8px;" id="print-totalCash">0.00</th>
+                        <th style="border: 1px solid black; text-align:right; padding:8px;" id="print-totalQR">0.00</th>
                     </tr>
                     <tr>
-                        <th colspan="3" style="text-align:right; padding:5px;">รวมเงินนำส่งทั้งสิ้น:</th>
-                        <th colspan="2" style="text-align:center; padding:5px;" id="print-totalAll">0.00</th>
+                        <th colspan="3" style="border: 1px solid black; text-align:right; padding:8px;">รวมเงินนำส่งทั้งสิ้น:</th>
+                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:8px; font-size: 14pt;" id="print-totalAll">0.00</th>
                     </tr>
                     <tr>
-                        <td colspan="5" style="text-align:center; font-weight:bold; padding:10px;">
+                        <td colspan="5" style="border: 1px solid black; text-align:center; font-weight:bold; padding:15px; font-size: 14pt;">
                             (ตัวอักษร) <span id="print-thaiText">ศูนย์บาทถ้วน</span>
+                        </td>
+                    </tr>
+                    <!-- ลายเซ็น -->
+                    <tr>
+                        <td colspan="3" style="border: none; text-align:center; padding-top: 60px; font-size: 14pt; vertical-align: top;">
+                            (...........................................)<br>
+                            ผู้รับเงิน
+                        </td>
+                        <td colspan="2" style="border: none; text-align:center; padding-top: 60px; font-size: 14pt; vertical-align: top;">
+                            <span id="print-staffName">....................</span><br>
+                            <span id="print-position">....................</span>
                         </td>
                     </tr>
                 </tfoot>
             </table>
-
-            <div style="display: flex; justify-content: space-between; margin-top: 50px; text-align: center;">
-                <div style="width: 250px;">
-                    (...........................................)<br>
-                    ผู้รับเงิน
-                </div>
-                <div style="width: 250px;">
-                    <span id="print-staffName">....................</span><br>
-                    <span id="print-position">....................</span>
-                </div>
-            </div>
         </div>
 
         <!-- ============================================== -->
         <!-- หน้าที่ 3 : สรุปเงิน (หน้าว่าง) -->
         <!-- ============================================== -->
-        <div id="page3" class="hidden max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in">
+        <div id="page3" class="hidden max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in print-hide">
             <div class="bg-teal-600 p-6 text-white text-center">
                 <h1 class="text-2xl font-bold">สรุปเงิน</h1>
             </div>
