@@ -3,253 +3,986 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สรุปออร์เดอร์ขนม</title>
+    <title>ระบบจัดการเงินค่ารักษาพยาบาล</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Prompt', sans-serif;
-            background-color: #f8fafc;
+        /* CSS เพิ่มเติมเล็กน้อยสำหรับ Animation สลับหน้าให้ดูสมูท */
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
         }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        
+        /* สไตล์สำหรับการพิมพ์ */
+        @media print {
+            /* ซ่อนทุกอย่างยกเว้นพื้นที่พิมพ์ */
+            body * {
+                visibility: hidden;
+            }
+            #printArea, #printArea * {
+                visibility: visible;
+            }
+            #printArea {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background-color: white;
+                padding: 20px;
+                color: black;
+            }
+            /* กำหนดสไตล์เส้นตารางตอนพิมพ์ให้ชัดเจน */
+            #printArea table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            #printArea th, #printArea td {
+                border: 1px solid black !important;
+                padding: 6px;
+                font-size: 14pt;
+            }
+            #printArea th {
+                background-color: #f3f4f6 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            /* ซ่อนเงาและสีพื้นหลังที่ไม่จำเป็น */
+            .shadow-sm, .shadow-lg, .rounded-xl, .bg-gray-100 {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                background-color: transparent !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 1.5cm;
+            }
         }
     </style>
-</head>
-<body class="text-slate-800">
-
-    <div class="max-w-6xl mx-auto p-4 py-8">
-        <!-- Header -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-blue-600 flex items-center gap-2">
-                    📦 สรุปออร์เดอร์
-                </h1>
-                <p class="text-slate-500 mt-1">ข้อมูลอัปเดตอัตโนมัติจาก Google Sheets</p>
-            </div>
-            <button onclick="fetchData()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg shadow-sm font-medium transition-colors flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                รีเฟรชข้อมูล
-            </button>
-        </div>
-
-        <!-- Loading State -->
-        <div id="loading" class="flex flex-col items-center justify-center py-20">
-            <div class="loader mb-4"></div>
-            <p class="text-slate-500">กำลังโหลดข้อมูล...</p>
-        </div>
-
-        <!-- Error State -->
-        <div id="error" class="hidden bg-red-50 text-red-600 p-4 rounded-xl mb-6 border border-red-200">
-            เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง
-        </div>
-
-        <!-- Main Content (Hidden initially) -->
-        <div id="content" class="hidden space-y-8">
-
-            <!-- Section 2: Total Summary -->
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="bg-blue-50 px-6 py-4 border-b border-slate-200">
-                    <h2 class="text-xl font-semibold text-blue-800 flex items-center gap-2">
-                        📊 สรุปยอดรวมสินค้าทั้งหมด
-                    </h2>
-                </div>
-                <div class="p-6">
-                    <div id="total-summary-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        <!-- Total items will be injected here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section 1: Individual Orders -->
-            <section>
-                <h2 class="text-xl font-semibold text-slate-800 mb-4 flex items-center gap-2 px-2">
-                    👥 สรุปรายการรายบุคคล
-                </h2>
-                <div id="individual-orders-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Individual cards will be injected here -->
-                </div>
-            </section>
-
-        </div>
-    </div>
-
     <script>
-        // URL ของ Google Sheets ที่เปลี่ยนเป็นแบบ CSV เพื่อให้อ่านข้อมูลง่ายขึ้น
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSmBgGVxDm0IRwAo-pcv9wQrpm_9GZHKPb9VYmPTXO-RHzm4grNzIkhwEOrr7l2vk5xgKuEuQgNkhgn/pub?output=csv";
+        // ==========================================
+        // ส่วนที่ 1: สคริปต์สลับหน้าเว็บ (Tabs)
+        // ==========================================
+        function showPage(pageId) {
+            document.getElementById('page1').classList.add('hidden');
+            document.getElementById('page2').classList.add('hidden');
+            document.getElementById('page3').classList.add('hidden');
 
-        // กำหนด Index ของแต่ละคอลัมน์ (0-based: A=0, B=1, C=2...)
-        const COL_NAME = 1; // B
-        const COL_AMOUNT = 2; // C
+            const tabs = ['tab1', 'tab2', 'tab3'];
+            tabs.forEach(tab => {
+                const el = document.getElementById(tab);
+                el.classList.remove('bg-white', 'text-blue-700', 'shadow-sm');
+                el.classList.add('text-blue-100', 'hover:bg-blue-600');
+            });
 
-        const ITEMS_CONFIG = [
-            { name: "เค้กเนยสด", fullName: "เค้กเนยสด เค้กบ้านสวน", index: 4, icon: "🍰" }, // E
-            { name: "เค้กกาแฟ", fullName: "เค้กกาแฟ เค้กบ้านสวน", index: 5, icon: "☕" }, // F
-            { name: "คัพเค้กธัญพืช", fullName: "คัพเค้กธัญพืช เค้กบ้านสวน", index: 6, icon: "🧁" }, // G
-            { name: "เค้กใบเตย", fullName: "เค้กใบเตย เค้กบ้านสวน", index: 7, icon: "🌿" }, // H
-            { name: "เค้กส้ม", fullName: "เค้กส้ม เค้กบ้านสวน", index: 8, icon: "🍊" }, // I
-            { name: "เค้กสตอเบอรี่", fullName: "เค้กสตอเบอรี่ เค้กบ้านสวน", index: 9, icon: "🍓" }, // J
-            { name: "เค้กกาแฟอัลมอนด์", fullName: "เค้กกาแฟอัลมอนด์ เค้กบ้านสวน", index: 10, icon: "🥜" }, // K
-            { name: "เค้กฝอยทอง", fullName: "เค้กฝอยทอง เค้กบ้านสวน", index: 11, icon: "✨" }, // L
-            { name: "เค้กช็อคโกแลต", fullName: "เค้กช็อคโกแลต เค้กบ้านสวน", index: 12, icon: "🍫" }, // M
-            { name: "เค้กชีส", fullName: "เค้กชีส เค้กบ้านสวน", index: 13, icon: "🧀" }, // N
-            { name: "เค้กครีมฝอยทอง", fullName: "เค้กครีมฝอยทอง เค้กบ้านสวน", index: 14, icon: "🍮" }, // O
-            { name: "สายใหม เล็ก", fullName: "โรตี สายใหม เล็ก", index: 15, icon: "🌯" }, // P
-            { name: "สายใหม กลาง", fullName: "โรตี สายใหม กลาง", index: 16, icon: "🌯" }, // Q
-            { name: "สายใหม ใหญ่", fullName: "โรตี สายใหม ใหญ่", index: 17, icon: "🌯" }  // R
-        ];
+            document.getElementById(pageId).classList.remove('hidden');
 
-        // ฟังก์ชันอ่านไฟล์ CSV แบบง่าย (รองรับการมีเครื่องหมายคำพูดในข้อมูล)
-        function parseCSV(str) {
-            const arr = [];
-            let quote = false;
-            let col = "", c;
-            let row = [];
-            for (let i = 0; i < str.length; i++) {
-                c = str[i];
-                if (c === '"' && str[i+1] === '"') { col += '"'; i++; }
-                else if (c === '"') { quote = !quote; }
-                else if (c === ',' && !quote) { row.push(col.trim()); col = ""; }
-                else if (c === '\n' && !quote) { row.push(col.trim()); arr.push(row); col = ""; row = []; }
-                else if (c === '\r' && !quote) { /* ignore */ }
-                else { col += c; }
+            const activeTabId = pageId.replace('page', 'tab');
+            const activeEl = document.getElementById(activeTabId);
+            activeEl.classList.remove('text-blue-100', 'hover:bg-blue-600');
+            activeEl.classList.add('bg-white', 'text-blue-700', 'shadow-sm');
+
+            if(pageId === 'page2') {
+                loadPage2Data();
             }
-            if (col !== "") row.push(col.trim());
-            if (row.length > 0) arr.push(row);
-            return arr;
         }
 
-        async function fetchData() {
-            // แสดง Loading
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('content').classList.add('hidden');
-            document.getElementById('error').classList.add('hidden');
+        // ==========================================
+        // ส่วนที่ 2: โค้ดเดิมสำหรับหน้าที่ 1 
+        // ==========================================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzTjgn2mQikdi9DZfVXAznc27G23QztHeU3cjayBt8GH8xBXKYGr7L4xRcH9TO0qww/exec'; 
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwEPCXGtFB7LtfQRfZNlKBumngH991g7-gBsxAG1iFe_OwZEVDGBLtYP_U7nygjlSmIwb4IId9AFTF/pub?gid=1608950220&single=true&output=csv';
+        const CSV_SAVED_DATA_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQwEPCXGtFB7LtfQRfZNlKBumngH991g7-gBsxAG1iFe_OwZEVDGBLtYP_U7nygjlSmIwb4IId9AFTF/pub?gid=0&single=true&output=csv';
 
+        let staffData = {}; 
+        let itemsList = [];
+        let savedRecords = []; 
+        let currentServicePoint = ""; // เก็บจุดบริการชั่วคราวสำหรับหน้า 2
+
+        let receiptOptionsHtml = '';
+        for(let i=1; i<=100; i++) {
+            let numStr = String(i).padStart(3, '0');
+            receiptOptionsHtml += `
+                <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0">
+                    <input type="checkbox" value="${i}" class="mr-2 receipt-cb rounded text-blue-600 focus:ring-blue-500" onchange="updateReceiptInput(this)">
+                    <span class="text-gray-700">${numStr}</span>
+                </label>`;
+        }
+
+        function CSVToArray(strData) {
+            let objPattern = new RegExp(("(\\,|\\r?\\n|\\r|^)(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|([^\"\\,\\r\\n]*))"), "gi");
+            let arrData = [[]], arrMatches = null;
+            while (arrMatches = objPattern.exec(strData)) {
+                let strMatchedDelimiter = arrMatches[1];
+                if (strMatchedDelimiter.length && strMatchedDelimiter !== ",") arrData.push([]);
+                let strMatchedValue;
+                if (arrMatches[2]) strMatchedValue = arrMatches[2].replace(new RegExp("\"\"", "g"), "\"");
+                else strMatchedValue = arrMatches[3];
+                arrData[arrData.length - 1].push(strMatchedValue);
+            }
+            return arrData;
+        }
+
+        async function loadData() {
             try {
-                const response = await fetch(SHEET_CSV_URL);
-                if (!response.ok) throw new Error("Network response was not ok");
+                document.getElementById('loading').classList.remove('hidden');
+                const response = await fetch(CSV_URL);
+                const text = await response.text();
+                const rows = CSVToArray(text);
+
+                const servicePoints = new Set(), shifts = new Set(), staffs = new Set();
                 
-                const csvText = await response.text();
-                const rows = parseCSV(csvText);
-                
-                processAndRenderData(rows);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                document.getElementById('loading').classList.add('hidden');
-                document.getElementById('error').classList.remove('hidden');
-            }
-        }
-
-        function processAndRenderData(rows) {
-            // ตัดแถวแรกทิ้ง (หัวตาราง)
-            const dataRows = rows.slice(1);
-            
-            let totalSummary = {};
-            ITEMS_CONFIG.forEach(item => totalSummary[item.fullName] = { qty: 0, icon: item.icon, name: item.name });
-            
-            const individualOrdersHTML = [];
-
-            dataRows.forEach(row => {
-                const name = row[COL_NAME];
-                const amount = row[COL_AMOUNT];
-
-                // ข้ามแถวที่ไม่มีชื่อผู้ฝาก
-                if (!name || name === "") return;
-
-                let userItemsHTML = "";
-                let hasOrder = false;
-
-                ITEMS_CONFIG.forEach(item => {
-                    // อ่านจำนวน และแปลงเป็นตัวเลข (ถ้าว่างหรือแปลงไม่ได้ให้เป็น 0)
-                    const qtyStr = row[item.index];
-                    const qty = parseInt(qtyStr, 10) || 0;
-
-                    if (qty > 0) {
-                        hasOrder = true;
-                        // เพิ่มยอดรวม
-                        totalSummary[item.fullName].qty += qty;
-                        
-                        // สร้าง HTML สำหรับรายการรายบุคคล
-                        userItemsHTML += `
-                            <div class="flex justify-between items-center py-1 border-b border-slate-100 last:border-0 text-sm">
-                                <span class="text-slate-600">${item.icon} ${item.name}</span>
-                                <span class="font-medium bg-slate-100 px-2 py-0.5 rounded text-slate-800">${qty}</span>
-                            </div>
-                        `;
+                rows.forEach(r => {
+                    if(r.length < 5) return;
+                    if(r[0] && r[0].trim() !== '') servicePoints.add(r[0].trim());
+                    if(r[1] && r[1].trim() !== '') itemsList.push(r[1].trim());
+                    if(r[2] && r[2].trim() !== '') {
+                        staffs.add(r[2].trim());
+                        staffData[r[2].trim()] = (r[3] || '').trim();
                     }
+                    if(r[4] && r[4].trim() !== '') shifts.add(r[4].trim());
                 });
 
-                // หากมีรายการสั่งซื้อ ให้สร้าง Card
-                if (hasOrder) {
-                    const formattedAmount = amount ? amount : "-";
-                    individualOrdersHTML.push(`
-                        <div class="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-slate-200 overflow-hidden">
-                            <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                                <div class="font-semibold text-slate-800 flex items-center gap-2">
-                                    <span class="bg-blue-100 text-blue-600 rounded-full w-8 h-8 flex items-center justify-center text-sm">👤</span>
-                                    ${name}
-                                </div>
-                                <div class="text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
-                                    💰 ${formattedAmount} ฿
-                                </div>
-                            </div>
-                            <div class="p-4 space-y-1">
-                                ${userItemsHTML}
-                            </div>
-                        </div>
-                    `);
-                }
-            });
+                itemsList = [...new Set(itemsList)];
 
-            // สร้าง HTML สำหรับยอดรวมทั้งหมด
-            let totalSummaryHTML = "";
-            let hasAnyTotalOrder = false;
-            Object.values(totalSummary).forEach(item => {
-                if (item.qty > 0) {
-                    hasAnyTotalOrder = true;
-                    totalSummaryHTML += `
-                        <div class="bg-white border border-slate-100 rounded-lg p-4 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden group hover:border-blue-200 transition-colors">
-                            <div class="text-3xl mb-2 z-10">${item.icon}</div>
-                            <div class="text-slate-600 text-sm font-medium z-10">${item.name}</div>
-                            <div class="text-2xl font-bold text-blue-600 mt-1 z-10">${item.qty}</div>
-                            <div class="absolute -bottom-4 -right-4 text-8xl opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">${item.icon}</div>
-                        </div>
-                    `;
-                }
-            });
-
-            // อัปเดต DOM
-            const individualContainer = document.getElementById('individual-orders-grid');
-            const totalContainer = document.getElementById('total-summary-grid');
-
-            if (individualOrdersHTML.length > 0) {
-                individualContainer.innerHTML = individualOrdersHTML.join('');
-            } else {
-                individualContainer.innerHTML = `<div class="col-span-full text-center py-8 text-slate-500 bg-white rounded-xl border border-slate-200">ยังไม่มีรายการสั่งซื้อ</div>`;
+                populateSelect('servicePoint', servicePoints);
+                populateSelect('shift', shifts);
+                populateSelect('staffName', staffs);
+                
+                document.getElementById('loading').classList.add('hidden');
+                addRow();
+            } catch (error) {
+                console.error("Error loading data:", error);
+                alert("ไม่สามารถดึงข้อมูลตัวเลือกได้ กรุณาตรวจสอบอินเทอร์เน็ต");
+                document.getElementById('loading').classList.add('hidden');
             }
-
-            if (hasAnyTotalOrder) {
-                totalContainer.innerHTML = totalSummaryHTML;
-            } else {
-                totalContainer.innerHTML = `<div class="col-span-full text-center py-4 text-slate-500">ยังไม่มียอดรวมสินค้า</div>`;
-            }
-
-            // ซ่อน Loading แสดง Content
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('content').classList.remove('hidden');
         }
 
-        // เรียกดึงข้อมูลครั้งแรกเมื่อโหลดหน้าเสร็จ
-        window.onload = fetchData;
+        function populateSelect(id, set) {
+            const select = document.getElementById(id);
+            set.forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = val;
+                select.appendChild(opt);
+            });
+        }
+
+        function onStaffChange() {
+            const name = document.getElementById('staffName').value;
+            document.getElementById('position').value = staffData[name] || '';
+        }
+
+        function toggleReceiptDropdown(inputEl) {
+            document.querySelectorAll('.receipt-options').forEach(el => {
+                if (el !== inputEl.nextElementSibling) el.classList.add('hidden');
+            });
+            inputEl.nextElementSibling.classList.toggle('hidden');
+        }
+
+        function pad3(num) {
+            return String(num).padStart(3, '0');
+        }
+
+        function formatReceiptRanges(selectedNumbers) {
+            if(selectedNumbers.length === 0) return "";
+            selectedNumbers.sort((a,b) => a - b);
+            let ranges = [];
+            let start = selectedNumbers[0];
+            let end = selectedNumbers[0];
+
+            for(let i = 1; i < selectedNumbers.length; i++) {
+                if(selectedNumbers[i] === end + 1) {
+                    end = selectedNumbers[i];
+                } else {
+                    ranges.push(start === end ? pad3(start) : `${pad3(start)}-${pad3(end)}`);
+                    start = selectedNumbers[i];
+                    end = selectedNumbers[i];
+                }
+            }
+            ranges.push(start === end ? pad3(start) : `${pad3(start)}-${pad3(end)}`);
+            return ranges.join(', ');
+        }
+
+        function updateReceiptInput(cb) {
+            const container = cb.closest('.receipt-dropdown-container');
+            const displayInput = container.querySelector('.receipt-display');
+            const checkboxes = container.querySelectorAll('.receipt-cb:checked');
+
+            let selected = [];
+            checkboxes.forEach(c => selected.push(parseInt(c.value)));
+            displayInput.value = formatReceiptRanges(selected);
+        }
+
+        document.addEventListener('click', function(e) {
+            if(!e.target.closest('.receipt-dropdown-container')) {
+                document.querySelectorAll('.receipt-options').forEach(el => el.classList.add('hidden'));
+            }
+        });
+
+        function addRow() {
+            const tbody = document.getElementById('itemsTable');
+            const row = document.createElement('tr');
+            row.className = "border-b hover:bg-gray-50";
+
+            let itemOptions = itemsList.map(item => `<option value="${item}">${item}</option>`).join('');
+
+            row.innerHTML = `
+                <td class="p-2"><input type="number" class="w-full border rounded p-1 input-bookNo" required></td>
+                <td class="p-2">
+                    <div class="relative receipt-dropdown-container">
+                        <input type="text" class="w-full border rounded p-1 cursor-pointer bg-white receipt-display input-receiptNo" readonly placeholder="เลือก..." onclick="toggleReceiptDropdown(this)" required>
+                        <div class="hidden absolute top-full left-0 w-48 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 max-h-48 overflow-y-auto receipt-options">
+                            ${receiptOptionsHtml}
+                        </div>
+                    </div>
+                </td>
+                <td class="p-2"><select class="w-full border rounded p-1 bg-white input-item" required><option value="">-- เลือกรายการ --</option>${itemOptions}</select></td>
+                <td class="p-2"><input type="number" step="0.01" class="w-full border rounded p-1 amount-input input-amount" required oninput="calculateTotal()"></td>
+                <td class="p-2"><input type="text" class="w-full border rounded p-1 input-note"></td>
+                <td class="p-2 text-center">
+                    <button type="button" onclick="removeRow(this)" class="text-red-500 hover:text-red-700 bg-red-100 hover:bg-red-200 rounded p-2"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        function removeRow(btn) {
+            const tbody = document.getElementById('itemsTable');
+            if (tbody.children.length > 1) {
+                btn.closest('tr').remove();
+                calculateTotal();
+            } else {
+                alert("ต้องมีอย่างน้อย 1 รายการ");
+            }
+        }
+
+        function calculateTotal() {
+            const amountInputs = document.querySelectorAll('.amount-input');
+            let total = 0;
+            amountInputs.forEach(input => {
+                const val = parseFloat(input.value);
+                if (!isNaN(val)) {
+                    total += val;
+                }
+            });
+            document.getElementById('totalAmount').innerText = total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function getThaiDate(dateStr) {
+            if (!dateStr) return "";
+            const d = new Date(dateStr);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const yearBE = d.getFullYear() + 543;
+            return `${day}/${month}/${yearBE}`;
+        }
+
+        async function submitForm(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังบันทึก...';
+
+            const rawDate = document.getElementById('date').value;
+            const thaiDate = getThaiDate(rawDate);
+
+            const payload = {
+                staffName: document.getElementById('staffName').value,
+                position: document.getElementById('position').value,
+                date: thaiDate,
+                shift: document.getElementById('shift').value,
+                servicePoint: document.getElementById('servicePoint').value,
+                items: []
+            };
+
+            const rows = document.getElementById('itemsTable').children;
+            for (let tr of rows) {
+                payload.items.push({
+                    bookNo: tr.querySelector('.input-bookNo').value,
+                    receiptNo: tr.querySelector('.input-receiptNo').value,
+                    item: tr.querySelector('.input-item').value,
+                    amount: tr.querySelector('.input-amount').value,
+                    note: tr.querySelector('.input-note').value
+                });
+            }
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await res.json();
+                if (result.status === "success") {
+                    alert("บันทึกข้อมูลเรียบร้อยแล้ว");
+                    document.getElementById('medicalForm').reset();
+                    document.getElementById('itemsTable').innerHTML = '';
+                    addRow();
+                    calculateTotal();
+                } else {
+                    alert("เกิดข้อผิดพลาด: " + result.message);
+                }
+            } catch (error) {
+                alert("ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่ (Error: " + error.message + ")");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> บันทึกข้อมูล';
+            }
+        }
+
+        // ==========================================
+        // ฟังก์ชันเสริม: อ่านตัวเลขเป็นภาษาไทย (ThaiBaht)
+        // ==========================================
+        function ThaiBaht(Number) {
+            Number = Number.toString().replace(/[, ]/g, "");
+            if (isNaN(Number)) return "ไม่สามารถอ่านตัวเลขได้";
+            let BahtText = "";
+            let data = Number.split(".");
+            if (data.length == 2) {
+                if (data[1].length == 1) {
+                    data[1] += "0";
+                }
+            } else {
+                data.push("00");
+            }
+            if (data[0] == 0 && data[1] == 0) return "ศูนย์บาทถ้วน";
+            
+            const txtNum = ["ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า"];
+            const txtUnit = ["", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน"];
+            
+            function processIntText(strInt) {
+                let text = "";
+                let len = strInt.length;
+                for (let i = 0; i < len; i++) {
+                    let n = parseInt(strInt.charAt(i));
+                    if (n !== 0) {
+                        if (i == len - 1 && n == 1 && len > 1) {
+                            text += "เอ็ด";
+                        } else if (i == len - 2 && n == 2) {
+                            text += "ยี่";
+                        } else if (i == len - 2 && n == 1) {
+                            text += "";
+                        } else {
+                            text += txtNum[n];
+                        }
+                        text += txtUnit[len - i - 1];
+                    }
+                }
+                return text;
+            }
+
+            let bahtInt = data[0];
+            // จัดการกรณีตัวเลขเยอะๆ (หลักล้านขึ้นไป)
+            if(bahtInt.length > 6) {
+                let mils = bahtInt.substring(0, bahtInt.length - 6);
+                let rests = bahtInt.substring(bahtInt.length - 6);
+                BahtText += processIntText(mils) + "ล้าน" + processIntText(rests);
+            } else {
+                BahtText += processIntText(bahtInt);
+            }
+            
+            if (BahtText !== "") BahtText += "บาท";
+            
+            if (data[1] == "00") {
+                BahtText += "ถ้วน";
+            } else {
+                let satang = processIntText(data[1]);
+                if (satang !== "") BahtText += satang + "สตางค์";
+            }
+            return BahtText;
+        }
+
+        // แปลงวันที่ "21/05/2569" -> "21 พฤษภาคม พ.ศ. 2569"
+        function formatThaiDateFull(dateStr) {
+            if(!dateStr) return "";
+            const parts = dateStr.split('/');
+            if(parts.length !== 3) return dateStr;
+            const months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            const day = parseInt(parts[0], 10);
+            const monthIdx = parseInt(parts[1], 10) - 1;
+            const year = parts[2];
+            return `${day} ${months[monthIdx]} พ.ศ. ${year}`;
+        }
+
+        // ==========================================
+        // ส่วนจัดการ หน้าที่ 2 (ใบนำส่งเงิน)
+        // ==========================================
+        async function loadPage2Data() {
+            try {
+                document.getElementById('loading-p2').classList.remove('hidden');
+                document.getElementById('btn-actions').classList.add('hidden'); // ซ่อนปุ่มพิมพ์
+
+                const response = await fetch(CSV_SAVED_DATA_URL);
+                const text = await response.text();
+                const rows = CSVToArray(text);
+                
+                savedRecords = rows.filter(r => r.length >= 9 && r[0] && r[0].trim() !== '');
+
+                const dates = new Set();
+                savedRecords.forEach(r => dates.add(r[0].trim())); // Col A: Date
+
+                updateSelectOptions('p2-date', dates, '-- เลือกวันที่ --');
+                updateSelectOptions('p2-staff', new Set(), '-- เลือกเจ้าหน้าที่ --');
+                updateSelectOptions('p2-shift', new Set(), '-- เลือกเวร --');
+                document.getElementById('p2-position').value = '';
+
+                document.getElementById('loading-p2').classList.add('hidden');
+            } catch (error) {
+                console.error("Error loading page 2 data:", error);
+                document.getElementById('loading-p2').classList.add('hidden');
+                alert("ไม่สามารถดึงข้อมูลประวัติได้");
+            }
+        }
+
+        function updateSelectOptions(id, setObj, defaultText) {
+            const select = document.getElementById(id);
+            const currentVal = select.value;
+            select.innerHTML = `<option value="">${defaultText}</option>`;
+            let arr = Array.from(setObj).sort();
+            arr.forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = val;
+                select.appendChild(opt);
+            });
+            if(arr.includes(currentVal)) select.value = currentVal;
+        }
+
+        function onP2DateChange() {
+            const date = document.getElementById('p2-date').value;
+            if (!date) {
+                updateSelectOptions('p2-staff', new Set(), '-- เลือกเจ้าหน้าที่ --');
+                updateSelectOptions('p2-shift', new Set(), '-- เลือกเวร --');
+                document.getElementById('p2-position').value = '';
+                return;
+            }
+
+            const staffs = new Set();
+            savedRecords.forEach(r => {
+                if (r[0].trim() === date && r[3] && r[3].trim() !== '') {
+                    staffs.add(r[3].trim()); // Col D: Staff
+                }
+            });
+            
+            updateSelectOptions('p2-staff', staffs, '-- เลือกเจ้าหน้าที่ --');
+            updateSelectOptions('p2-shift', new Set(), '-- เลือกเวร --');
+            document.getElementById('p2-position').value = '';
+        }
+
+        function onP2StaffChange() {
+            const date = document.getElementById('p2-date').value;
+            const staff = document.getElementById('p2-staff').value;
+
+            if (!staff) {
+                document.getElementById('p2-position').value = '';
+                updateSelectOptions('p2-shift', new Set(), '-- เลือกเวร --');
+                return;
+            }
+
+            const shifts = new Set();
+            let position = '';
+            
+            savedRecords.forEach(r => {
+                if (r[0].trim() === date && r[3].trim() === staff) {
+                    if (r[1] && r[1].trim() !== '') shifts.add(r[1].trim()); // Col B: Shift
+                    if (!position && r[4]) position = r[4].trim(); // Col E: Position
+                }
+            });
+
+            document.getElementById('p2-position').value = position;
+            updateSelectOptions('p2-shift', shifts, '-- เลือกเวร --');
+        }
+
+        function parseReceipts(str) {
+            if(!str) return [];
+            let nums = [];
+            let parts = str.split(',');
+            parts.forEach(p => {
+                let range = p.split('-');
+                if(range.length === 1) {
+                    nums.push(parseInt(range[0].trim(), 10));
+                } else if(range.length === 2) {
+                    let start = parseInt(range[0].trim(), 10);
+                    let end = parseInt(range[1].trim(), 10);
+                    if(!isNaN(start) && !isNaN(end)) {
+                        for(let i=start; i<=end; i++) nums.push(i);
+                    }
+                }
+            });
+            return nums.filter(n => !isNaN(n));
+        }
+
+        function generateSummary() {
+            const selDate = document.getElementById('p2-date').value;
+            const selStaff = document.getElementById('p2-staff').value;
+            const selShift = document.getElementById('p2-shift').value;
+            const selPosition = document.getElementById('p2-position').value;
+
+            if(!selDate || !selStaff || !selShift) {
+                alert('กรุณาเลือก วันที่, ชื่อผู้ทำรายการ และเวร ให้ครบถ้วน');
+                return;
+            }
+
+            let filtered = savedRecords.filter(r => 
+                r[0].trim() === selDate &&
+                r[3].trim() === selStaff &&
+                r[1].trim() === selShift
+            );
+
+            let groups = {}; 
+            currentServicePoint = ""; // เคลียร์จุดบริการก่อน
+
+            filtered.forEach(r => {
+                if(!currentServicePoint && r[2]) currentServicePoint = r[2].trim(); // ดึง Col C: จุดบริการ
+
+                let bookNo = r[5] ? r[5].trim() : '';
+                let receiptStr = r[6] ? r[6].trim() : '';
+                let item = r[7] ? r[7].trim() : '';
+                let amount = parseFloat((r[8] || '0').replace(/,/g, '')) || 0;
+
+                if (!bookNo) return; 
+
+                if(!groups[bookNo]) {
+                    groups[bookNo] = { receipts: new Set(), items: {} };
+                }
+
+                let parsedNums = parseReceipts(receiptStr);
+                parsedNums.forEach(n => groups[bookNo].receipts.add(n));
+
+                // เช็ค QR (ถ้ามีคำว่า qr หรือ QR ในรายการ)
+                let isQR = item.toUpperCase().includes('QR');
+
+                // ถ้ารายการชื่อเหมือนกัน แต่คนละประเภท (เงินสด/QR) เราต้องแยกก้อน
+                // แต่ถ้าชื่อมีคำว่า QR อยู่แล้ว มันจะแยกให้เองโดยชื่อ
+                if(!groups[bookNo].items[item]) {
+                    groups[bookNo].items[item] = { amount: 0, isQR: isQR };
+                }
+                groups[bookNo].items[item].amount += amount;
+            });
+
+            let tbody = document.getElementById('p2-summaryTable');
+            let printTbody = document.getElementById('print-tbody');
+            tbody.innerHTML = '';
+            printTbody.innerHTML = '';
+            
+            let totalCash = 0;
+            let totalQR = 0;
+            let hasData = false;
+            
+            let sortedBooks = Object.keys(groups).sort();
+
+            sortedBooks.forEach(bookNo => {
+                hasData = true;
+                let g = groups[bookNo];
+                
+                let receiptArray = Array.from(g.receipts);
+                let receiptFormatted = formatReceiptRanges(receiptArray);
+
+                let itemKeys = Object.keys(g.items).sort();
+                itemKeys.forEach((item, index) => {
+                    let itemData = g.items[item];
+                    let cashAmt = itemData.isQR ? 0 : itemData.amount;
+                    let qrAmt = itemData.isQR ? itemData.amount : 0;
+
+                    totalCash += cashAmt;
+                    totalQR += qrAmt;
+
+                    let cashStr = cashAmt > 0 ? cashAmt.toLocaleString('en-US', {minimumFractionDigits:2}) : '-';
+                    let qrStr = qrAmt > 0 ? qrAmt.toLocaleString('en-US', {minimumFractionDigits:2}) : '-';
+
+                    // สร้าง HTML 2 ชุด (สำหรับหน้าจอปกติ และ สำหรับพิมพ์)
+                    let rowHtml = '';
+                    if (index === 0) {
+                        rowHtml = `
+                            <td class="p-2 md:p-3 border-r align-top text-center" rowspan="${itemKeys.length}">${bookNo}</td>
+                            <td class="p-2 md:p-3 border-r align-top text-center" rowspan="${itemKeys.length}">${receiptFormatted}</td>
+                            <td class="p-2 md:p-3 border-r">${item}</td>
+                            <td class="p-2 md:p-3 border-r text-right">${cashStr}</td>
+                            <td class="p-2 md:p-3 text-right">${qrStr}</td>
+                        `;
+                    } else {
+                        rowHtml = `
+                            <td class="p-2 md:p-3 border-r">${item}</td>
+                            <td class="p-2 md:p-3 border-r text-right">${cashStr}</td>
+                            <td class="p-2 md:p-3 text-right">${qrStr}</td>
+                        `;
+                    }
+
+                    let tr = document.createElement('tr');
+                    tr.className = "border-b hover:bg-gray-50";
+                    tr.innerHTML = rowHtml;
+                    tbody.appendChild(tr);
+
+                    // สร้างบรรทัดสำหรับหน้าพิมพ์
+                    let printTr = document.createElement('tr');
+                    printTr.innerHTML = rowHtml;
+                    printTbody.appendChild(printTr);
+                });
+            });
+
+            if(!hasData) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">ไม่พบข้อมูลสำหรับเงื่อนไขที่เลือก</td></tr>`;
+                document.getElementById('btn-actions').classList.add('hidden');
+                return;
+            }
+
+            let grandTotal = totalCash + totalQR;
+
+            // อัปเดตหน้าจอปกติ
+            document.getElementById('p2-totalCash').innerText = totalCash.toLocaleString('en-US', {minimumFractionDigits:2});
+            document.getElementById('p2-totalQR').innerText = totalQR.toLocaleString('en-US', {minimumFractionDigits:2});
+            document.getElementById('p2-totalAll').innerText = grandTotal.toLocaleString('en-US', {minimumFractionDigits:2});
+
+            // อัปเดตข้อมูลในหน้า Print
+            document.getElementById('print-servicePoint').innerText = currentServicePoint;
+            document.getElementById('print-shift').innerText = selShift;
+            document.getElementById('print-date').innerText = formatThaiDateFull(selDate);
+            
+            document.getElementById('print-totalCash').innerText = totalCash.toLocaleString('en-US', {minimumFractionDigits:2});
+            document.getElementById('print-totalQR').innerText = totalQR.toLocaleString('en-US', {minimumFractionDigits:2});
+            document.getElementById('print-totalAll').innerText = grandTotal.toLocaleString('en-US', {minimumFractionDigits:2});
+            document.getElementById('print-thaiText').innerText = ThaiBaht(grandTotal);
+
+            document.getElementById('print-staffName').innerText = selStaff;
+            document.getElementById('print-position').innerText = selPosition;
+
+            // แสดงปุ่มพิมพ์
+            document.getElementById('btn-actions').classList.remove('hidden');
+        }
+
+        function executePrint() {
+            window.print();
+        }
+
+        // ฟังก์ชันส่งออกเป็น Excel แบบง่ายผ่าน HTML Table
+        function exportExcel() {
+            const table = document.getElementById("export-table");
+            let html = table.outerHTML;
+            // เพิ่ม Meta Tag เพื่อรองรับภาษาไทยใน Excel
+            let dataUri = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent('<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"></head><body>' + html + '</body></html>');
+            
+            const dateStr = document.getElementById('p2-date').value.replace(/\//g, '-');
+            let link = document.createElement('a');
+            link.href = dataUri;
+            link.download = `ใบนำส่งเงิน_${dateStr}.xls`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.onload = loadData;
     </script>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+    
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-white/80 z-50 flex flex-col items-center justify-center hidden">
+        <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+        <p class="text-gray-700 font-semibold">กำลังดึงข้อมูลจาก Google Sheet...</p>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="bg-blue-700 shadow-lg sticky top-0 z-40 print-hide">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 text-white font-bold text-xl tracking-wider">
+                        <i class="fa-solid fa-hospital-user mr-2"></i> ระบบการเงิน
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-10 flex items-baseline space-x-2">
+                            <button id="tab1" onclick="showPage('page1')" class="bg-white text-blue-700 shadow-sm px-4 py-2 rounded-md text-sm font-bold transition-all duration-200">
+                                <i class="fa-solid fa-pen-to-square mr-1"></i> บันทึกรับเงิน
+                            </button>
+                            <button id="tab2" onclick="showPage('page2')" class="text-blue-100 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-200">
+                                <i class="fa-solid fa-file-invoice-dollar mr-1"></i> ใบนำส่งเงิน
+                            </button>
+                            <button id="tab3" onclick="showPage('page3')" class="text-blue-100 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-200">
+                                <i class="fa-solid fa-chart-pie mr-1"></i> สรุปเงิน
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="md:hidden bg-blue-800 flex justify-around p-2">
+            <button id="tab1-mobile" onclick="showPage('page1')" class="text-white text-xs py-2 px-3 rounded bg-blue-600 font-bold"><i class="fa-solid fa-pen-to-square block mb-1"></i>บันทึก</button>
+            <button id="tab2-mobile" onclick="showPage('page2')" class="text-blue-200 text-xs py-2 px-3 rounded hover:bg-blue-700"><i class="fa-solid fa-file-invoice-dollar block mb-1"></i>ใบนำส่ง</button>
+            <button id="tab3-mobile" onclick="showPage('page3')" class="text-blue-200 text-xs py-2 px-3 rounded hover:bg-blue-700"><i class="fa-solid fa-chart-pie block mb-1"></i>สรุป</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="p-4 md:p-8 relative">
+
+        <!-- ============================================== -->
+        <!-- หน้าที่ 1 : บันทึกรับเงินค่ารักษาพยาบาล (ฟอร์มเดิม) -->
+        <!-- ============================================== -->
+        <div id="page1" class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in">
+            <div class="bg-blue-600 p-6 text-white text-center">
+                <h1 class="text-2xl font-bold">บันทึกรับเงินค่ารักษาพยาบาล</h1>
+            </div>
+            
+            <form id="medicalForm" onsubmit="submitForm(event)" class="p-6 md:p-8">
+                <!-- โค้ดเดิมของหน้า 1 ทุกอย่างอยู่ครบ -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-2">1. ชื่อผู้ทำรายการ</label>
+                        <select id="staffName" onchange="onStaffChange()" required class="w-full border-gray-300 border rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- เลือกชื่อผู้ทำรายการ --</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-2">ตำแหน่ง</label>
+                        <input type="text" id="position" readonly class="w-full border-gray-300 border rounded-lg p-3 bg-gray-50 text-gray-600" placeholder="แสดงอัตโนมัติ">
+                    </div>
+                    
+                    <div class="col-span-1 md:col-span-2 lg:col-span-1">
+                        <label class="block text-gray-700 font-medium mb-2">2. วันที่ (ระบบแปลงเป็น พ.ศ.)</label>
+                        <input type="date" id="date" required class="w-full border-gray-300 border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    
+                    <div class="col-span-1 md:col-span-2 lg:col-span-1">
+                        <label class="block text-gray-700 font-medium mb-2">3. เวร</label>
+                        <select id="shift" required class="w-full border-gray-300 border rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- เลือกเวร --</option>
+                        </select>
+                    </div>
+
+                    <div class="col-span-1 md:col-span-2 lg:col-span-2">
+                        <label class="block text-gray-700 font-medium mb-2">4. จุดให้บริการ</label>
+                        <select id="servicePoint" required class="w-full border-gray-300 border rounded-lg p-3 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">-- เลือกจุดให้บริการ --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr class="my-8 border-gray-200">
+
+                <div class="mb-4 flex justify-between items-end">
+                    <h2 class="text-xl font-bold text-gray-800">5. ตารางรายการรับเงินค่ารักษา</h2>
+                    <button type="button" onclick="addRow()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium shadow transition-colors">
+                        <i class="fa-solid fa-plus mr-1"></i> เพิ่มรายการ
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto border rounded-lg mb-8">
+                    <table class="w-full text-left border-collapse min-w-[800px]">
+                        <thead>
+                            <tr class="bg-gray-100 border-b">
+                                <th class="p-3 w-24">เล่มที่ใบเสร็จ</th>
+                                <th class="p-3 w-32">เลขที่ใบเสร็จ</th>
+                                <th class="p-3 min-w-[200px]">รายการ</th>
+                                <th class="p-3 w-32">จำนวนเงิน</th>
+                                <th class="p-3 min-w-[150px]">หมายเหตุ</th>
+                                <th class="p-3 w-16 text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTable">
+                            <!-- แถวข้อมูลจะถูกเพิ่มด้วย JavaScript -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-blue-50 border-t-2 border-blue-200">
+                                <td colspan="3" class="p-3 text-right font-bold text-gray-700 text-lg">ยอดรวมทั้งหมด:</td>
+                                <td class="p-3 font-bold text-blue-700 text-lg text-left" id="totalAmount">0.00</td>
+                                <td colspan="2" class="p-3"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl font-bold text-lg shadow-lg transition-transform transform hover:scale-105 w-full md:w-auto">
+                        <i class="fa-solid fa-save mr-2"></i> บันทึกข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- หน้าที่ 2 : ใบนำส่งเงิน (สรุปข้อมูล) -->
+        <!-- ============================================== -->
+        <div id="page2" class="hidden max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in relative">
+            
+            <div id="loading-p2" class="absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center hidden">
+                <i class="fa-solid fa-spinner fa-spin text-4xl text-indigo-600 mb-4"></i>
+                <p class="text-gray-700 font-semibold">กำลังดึงข้อมูลใบนำส่งเงิน...</p>
+            </div>
+
+            <div class="bg-indigo-600 p-6 text-white text-center flex justify-between items-center">
+                <div class="w-10"></div>
+                <h1 class="text-2xl font-bold">ใบนำส่งเงิน</h1>
+                <button onclick="loadPage2Data()" class="bg-indigo-800 hover:bg-indigo-900 text-white px-3 py-1 rounded text-sm transition-colors" title="รีเฟรชข้อมูล">
+                    <i class="fa-solid fa-rotate-right"></i> โหลดข้อมูลล่าสุด
+                </button>
+            </div>
+            
+            <div class="p-6 md:p-8">
+                <!-- ส่วนตัวกรอง -->
+                <div class="bg-indigo-50 rounded-lg p-5 border border-indigo-100 mb-6 shadow-sm">
+                    <h3 class="text-lg font-bold text-indigo-800 mb-4"><i class="fa-solid fa-filter mr-2"></i>เลือกเงื่อนไขเพื่อสรุปข้อมูล</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-1 text-sm">1. วันที่</label>
+                            <select id="p2-date" onchange="onP2DateChange()" class="w-full border-gray-300 border rounded p-2 bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- เลือกวันที่ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-1 text-sm">2. ชื่อเจ้าหน้าที่</label>
+                            <select id="p2-staff" onchange="onP2StaffChange()" class="w-full border-gray-300 border rounded p-2 bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- เลือกเจ้าหน้าที่ --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-1 text-sm">ตำแหน่ง</label>
+                            <input type="text" id="p2-position" readonly class="w-full border-gray-300 border rounded p-2 bg-gray-100 text-gray-600" placeholder="แสดงอัตโนมัติ">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-1 text-sm">3. เวร</label>
+                            <select id="p2-shift" class="w-full border-gray-300 border rounded p-2 bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- เลือกเวร --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-5 text-center md:text-right">
+                        <button onclick="generateSummary()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-2 rounded-lg font-bold shadow transition-colors">
+                            <i class="fa-solid fa-magnifying-glass mr-1"></i> ดึงข้อมูล
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ปุ่มเครื่องมือ (จะแสดงเมื่อมีข้อมูล) -->
+                <div id="btn-actions" class="hidden mb-4 flex justify-end gap-3">
+                    <button onclick="executePrint()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-bold shadow flex items-center">
+                        <i class="fa-solid fa-print mr-2"></i> พิมพ์ / PDF
+                    </button>
+                    <button onclick="exportExcel()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-bold shadow flex items-center">
+                        <i class="fa-solid fa-file-excel mr-2"></i> ส่งออก Excel
+                    </button>
+                </div>
+
+                <!-- ตารางบนหน้าจอ -->
+                <div class="overflow-x-auto border rounded-lg shadow-sm">
+                    <table class="w-full text-left border-collapse min-w-[700px]">
+                        <thead>
+                            <tr class="bg-indigo-100 border-b border-indigo-200 text-indigo-900">
+                                <th class="p-3 w-28 border-r border-indigo-200 text-center align-middle" rowspan="2">เล่มที่ใบเสร็จ</th>
+                                <th class="p-3 w-40 border-r border-indigo-200 text-center align-middle" rowspan="2">เลขที่ใบเสร็จ</th>
+                                <th class="p-3 min-w-[200px] border-r border-indigo-200 align-middle" rowspan="2">รายการ</th>
+                                <th class="p-2 border-b border-indigo-200 text-center" colspan="2">จำนวนเงิน</th>
+                            </tr>
+                            <tr class="bg-indigo-50 border-b-2 border-indigo-200 text-indigo-900">
+                                <th class="p-2 w-32 border-r border-indigo-200 text-center">เงินสด</th>
+                                <th class="p-2 w-32 text-center">QR-Code</th>
+                            </tr>
+                        </thead>
+                        <tbody id="p2-summaryTable">
+                            <tr>
+                                <td colspan="5" class="p-10 text-center text-gray-400 bg-gray-50">
+                                    <i class="fa-solid fa-table-list text-5xl mb-3 text-gray-300"></i>
+                                    <p class="text-lg">กรุณาเลือกเงื่อนไขและกดปุ่ม "ดึงข้อมูล"</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-gray-100 border-t-2 border-gray-300">
+                                <td colspan="3" class="p-4 text-right font-bold text-gray-700 text-lg border-r">รวมเงินแต่ละประเภท:</td>
+                                <td class="p-4 font-bold text-green-700 text-lg text-right border-r" id="p2-totalCash">0.00</td>
+                                <td class="p-4 font-bold text-blue-700 text-lg text-right" id="p2-totalQR">0.00</td>
+                            </tr>
+                            <tr class="bg-indigo-600 text-white border-t border-indigo-700">
+                                <td colspan="3" class="p-3 text-right font-bold text-lg border-r border-indigo-500">รวมเงินนำส่งทั้งสิ้น:</td>
+                                <td colspan="2" class="p-3 font-bold text-xl text-center" id="p2-totalAll">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- โครงสร้างสำหรับสั่ง Print / Export Excel (ซ่อนอยู่ตลอด) -->
+        <!-- ============================================== -->
+        <div id="printArea" class="hidden">
+            <div class="text-center font-bold text-xl mb-4 leading-relaxed">
+                สถานบริการสาธารณสุข โรงพยาบาลนางรองบันทึกการนำส่งเงิน<br>
+                จากจุดบริการ <span id="print-servicePoint">...</span><br>
+                เวร <span id="print-shift">...</span><br>
+                เรียน ผู้อำนวยการโรงพยาบาลนางรอง<br>
+                <span id="print-date">...</span>
+            </div>
+            
+            <table id="export-table" border="1" style="width:100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr>
+                        <!-- แทรกหัวข้อที่ใช้ตอน Export Excel ลงใน Table ให้อ่านง่ายขึ้น -->
+                        <th colspan="5" style="border:none; text-align:center; display:none;">
+                            สถานบริการสาธารณสุข โรงพยาบาลนางรองบันทึกการนำส่งเงิน
+                        </th>
+                    </tr>
+                    <tr>
+                        <th rowspan="2" style="text-align:center; padding:5px;">เล่มที่ใบเสร็จ</th>
+                        <th rowspan="2" style="text-align:center; padding:5px;">เลขที่ใบเสร็จ</th>
+                        <th rowspan="2" style="text-align:center; padding:5px;">รายการ</th>
+                        <th colspan="2" style="text-align:center; padding:5px;">จำนวนเงิน</th>
+                    </tr>
+                    <tr>
+                        <th style="text-align:center; padding:5px;">เงินสด</th>
+                        <th style="text-align:center; padding:5px;">QR-Code</th>
+                    </tr>
+                </thead>
+                <tbody id="print-tbody">
+                    <!-- ข้อมูลจะถูกเติมด้วย Javascript -->
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" style="text-align:right; padding:5px;">รวมเงินแต่ละประเภท:</th>
+                        <th style="text-align:right; padding:5px;" id="print-totalCash">0.00</th>
+                        <th style="text-align:right; padding:5px;" id="print-totalQR">0.00</th>
+                    </tr>
+                    <tr>
+                        <th colspan="3" style="text-align:right; padding:5px;">รวมเงินนำส่งทั้งสิ้น:</th>
+                        <th colspan="2" style="text-align:center; padding:5px;" id="print-totalAll">0.00</th>
+                    </tr>
+                    <tr>
+                        <td colspan="5" style="text-align:center; font-weight:bold; padding:10px;">
+                            (ตัวอักษร) <span id="print-thaiText">ศูนย์บาทถ้วน</span>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 50px; text-align: center;">
+                <div style="width: 250px;">
+                    (...........................................)<br>
+                    ผู้รับเงิน
+                </div>
+                <div style="width: 250px;">
+                    <span id="print-staffName">....................</span><br>
+                    <span id="print-position">....................</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- หน้าที่ 3 : สรุปเงิน (หน้าว่าง) -->
+        <!-- ============================================== -->
+        <div id="page3" class="hidden max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden animate-fade-in">
+            <div class="bg-teal-600 p-6 text-white text-center">
+                <h1 class="text-2xl font-bold">สรุปเงิน</h1>
+            </div>
+            <div class="p-20 flex flex-col items-center justify-center text-gray-400">
+                <i class="fa-solid fa-chart-pie text-7xl mb-6 text-gray-300"></i>
+                <h2 class="text-2xl font-medium text-gray-600 mb-2">หน้านี้เป็นหน้าว่าง</h2>
+                <p>เตรียมพื้นที่ไว้สำหรับการพัฒนา "รายงานสรุปเงิน" ในอนาคต</p>
+            </div>
+        </div>
+
+    </div>
 </body>
 </html>
