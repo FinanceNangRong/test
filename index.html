@@ -44,7 +44,7 @@
             }
             @page {
                 size: A4 portrait;
-                margin: 1.5cm;
+                margin: 2.5cm 1.5cm 1.5cm 1.5cm;
             }
         }
     </style>
@@ -537,8 +537,8 @@
                 let parsedNums = parseReceipts(receiptStr);
                 parsedNums.forEach(n => groups[bookNo].receipts.add(n));
 
-                // เช็คว่าเป็นรายการ QR-Code หรือไม่
-                let isQR = item.toUpperCase().includes('QR-CODE') || item.toUpperCase().includes('QR');
+                // เช็คว่าเป็นรายการ QR-Code หรือไม่ โดยยึดจากคำว่า QR-CODE
+                let isQR = item.toUpperCase().includes('QR-CODE');
 
                 // รวมยอดหากชื่อรายการ (item) เหมือนกัน
                 if(!groups[bookNo].items[item]) {
@@ -912,27 +912,27 @@
             <table id="export-table" style="width:100%; border-collapse: collapse; text-align: left; font-family: sans-serif; font-size: 10pt; color: black;">
                 <thead>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 10pt; font-weight: bold; border: none; padding-bottom: 10px;">
+                        <th colspan="5" style="text-align: center; font-size: 12pt; font-weight: bold; border: none; padding-bottom: 10px;">
                             สถานบริการสาธารณสุข โรงพยาบาลนางรองบันทึกการนำส่งเงิน
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 5px; font-weight: normal;">
+                        <th colspan="5" style="text-align: center; font-size: 12pt; border: none; padding-bottom: 5px; font-weight: normal;">
                             จากจุดบริการ <span id="print-servicePoint">...</span>
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 5px; font-weight: normal;">
+                        <th colspan="5" style="text-align: center; font-size: 12pt; border: none; padding-bottom: 5px; font-weight: normal;">
                             เวร <span id="print-shift">...</span>
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 5px; font-weight: normal;">
+                        <th colspan="5" style="text-align: center; font-size: 12pt; border: none; padding-bottom: 5px; font-weight: normal;">
                             เรียน ผู้อำนวยการโรงพยาบาลนางรอง
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 20px; font-weight: normal;">
+                        <th colspan="5" style="text-align: center; font-size: 12pt; border: none; padding-bottom: 20px; font-weight: normal;">
                             <span id="print-date">...</span>
                         </th>
                     </tr>
@@ -968,11 +968,10 @@
                     </tr>
                     <!-- ลายเซ็น -->
                     <tr>
-                        <td colspan="3" style="border: none; text-align:Left; padding-top: 60px; font-size: 14pt; vertical-align: top;">
-                            (...........................................)ผู้รับเงิน<br>
-                            
+                        <td colspan="3" style="border: none; text-align:left; padding-top: 60px; font-size: 14pt; vertical-align: top; padding-left: 20px;">
+                            (...........................................)ผู้รับเงิน
                         </td>
-                        <td colspan="2" style="border: none; text-align:right; padding-top: 60px; font-size: 14pt; vertical-align: top;">
+                        <td colspan="2" style="border: none; text-align:center; padding-top: 60px; font-size: 14pt; vertical-align: top;">
                             <span id="print-staffName">....................</span><br>
                             <span id="print-position">....................</span>
                         </td>
