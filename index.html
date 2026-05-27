@@ -20,6 +20,13 @@
             body * {
                 visibility: hidden;
             }
+            /* ยกเลิกการเว้นขอบของ Container หลักเวลาพิมพ์ เพื่อให้กางเต็มกระดาษ */
+            .p-4, .md\:p-8 {
+                padding: 0 !important;
+            }
+            .relative {
+                position: static !important;
+            }
             #printArea, #printArea * {
                 visibility: visible;
             }
@@ -937,16 +944,16 @@
                             <span id="print-date">...</span>
                         </th>
                     </tr>
-                    <!-- ส่วนหัวตารางสำหรับพิมพ์ -->
+                    <!-- ส่วนหัวตารางสำหรับพิมพ์ ปรับสัดส่วนให้กางเต็ม 100% ของกระดาษ A4 -->
                     <tr>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px;">เล่มที่ใบเสร็จ</th>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px;">เลขที่ใบเสร็จ</th>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px;">รายการ</th>
-                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:8px;">จำนวนเงิน</th>
+                        <th rowspan="2" style="width: 15%; border: 1px solid black; text-align:center; padding:8px;">เล่มที่ใบเสร็จ</th>
+                        <th rowspan="2" style="width: 15%; border: 1px solid black; text-align:center; padding:8px;">เลขที่ใบเสร็จ</th>
+                        <th rowspan="2" style="width: 40%; border: 1px solid black; text-align:center; padding:8px;">รายการ</th>
+                        <th colspan="2" style="width: 30%; border: 1px solid black; text-align:center; padding:8px;">จำนวนเงิน</th>
                     </tr>
                     <tr>
-                        <th style="border: 1px solid black; text-align:center; padding:8px;">เงินสด</th>
-                        <th style="border: 1px solid black; text-align:center; padding:8px;">QR-Code</th>
+                        <th style="width: 15%; border: 1px solid black; text-align:center; padding:8px;">เงินสด</th>
+                        <th style="width: 15%; border: 1px solid black; text-align:center; padding:8px;">QR-Code</th>
                     </tr>
                 </thead>
                 <tbody id="print-tbody">
