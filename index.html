@@ -20,13 +20,6 @@
             body * {
                 visibility: hidden;
             }
-            /* ยกเลิกการเว้นขอบของ Container หลักเวลาพิมพ์ เพื่อให้กางเต็มกระดาษ */
-            .p-4, .md\:p-8 {
-                padding: 0 !important;
-            }
-            .relative {
-                position: static !important;
-            }
             #printArea, #printArea * {
                 visibility: visible;
             }
@@ -51,8 +44,8 @@
             }
             @page {
                 size: A4 portrait;
-                /* ปรับขอบบนเป็น 25mm ตามที่ต้องการ */
-                margin: 25mm 1.5cm 1.5cm 1.5cm;
+                /* ปรับขอบบนเป็น 20mm ตามที่ต้องการ */
+                margin: 20mm 1.5cm 1.5cm 1.5cm;
             }
         }
     </style>
@@ -782,8 +775,8 @@
                     <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr class="bg-gray-100 border-b">
-                                <th class="p-3 w-24">เล่มที่ใบเสร็จ</th>
-                                <th class="p-3 w-32">เลขที่ใบเสร็จ</th>
+                                <th class="p-3 w-24">เล่มที่</th>
+                                <th class="p-3 w-32">เลขที่</th>
                                 <th class="p-3 min-w-[200px]">รายการ</th>
                                 <th class="p-3 w-32">จำนวนเงิน</th>
                                 <th class="p-3 min-w-[150px]">หมายเหตุ</th>
@@ -879,14 +872,14 @@
                     <table class="w-full text-left border-collapse min-w-[500px]">
                         <thead>
                             <tr class="bg-indigo-100 border-b border-indigo-200 text-indigo-900">
-                                <th class="p-3 w-28 border-r border-indigo-200 text-center align-middle" rowspan="2">เล่มที่ใบเสร็จ</th>
-                                <th class="p-3 w-40 border-r border-indigo-200 text-center align-middle" rowspan="2">เลขที่ใบเสร็จ</th>
-                                <th class="p-3 min-w-[200px] border-r border-indigo-200 align-middle" rowspan="2">รายการ</th>
+                                <th class="p-3 w-20 border-r border-indigo-200 text-center align-middle" rowspan="2">เล่มที่</th>
+                                <th class="p-3 w-20 border-r border-indigo-200 text-center align-middle" rowspan="2">เลขที่</th>
+                                <th class="p-3 min-w-[150px] border-r border-indigo-200 align-middle" rowspan="2">รายการ</th>
                                 <th class="p-2 border-b border-indigo-200 text-center" colspan="2">จำนวนเงิน</th>
                             </tr>
                             <tr class="bg-indigo-50 border-b-2 border-indigo-200 text-indigo-900">
-                                <th class="p-2 w-32 border-r border-indigo-200 text-center">เงินสด</th>
-                                <th class="p-2 w-32 text-center">QR-Code</th>
+                                <th class="p-2 w-30 border-r border-indigo-200 text-center">เงินสด</th>
+                                <th class="p-2 w-30 text-center">QR-Code</th>
                             </tr>
                         </thead>
                         <tbody id="p2-summaryTable">
@@ -944,16 +937,16 @@
                             <span id="print-date">...</span>
                         </th>
                     </tr>
-                    <!-- ส่วนหัวตารางสำหรับพิมพ์ ปรับสัดส่วนให้กางเต็ม 100% ของกระดาษ A4 -->
+                    <!-- ส่วนหัวตารางสำหรับพิมพ์ -->
                     <tr>
-                        <th rowspan="2" style="width: 15%; border: 1px solid black; text-align:center; padding:8px;">เล่มที่ใบเสร็จ</th>
-                        <th rowspan="2" style="width: 15%; border: 1px solid black; text-align:center; padding:8px;">เลขที่ใบเสร็จ</th>
-                        <th rowspan="2" style="width: 40%; border: 1px solid black; text-align:center; padding:8px;">รายการ</th>
-                        <th colspan="2" style="width: 30%; border: 1px solid black; text-align:center; padding:8px;">จำนวนเงิน</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px;">เล่มที่</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px;">เลขที่</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px;">รายการ</th>
+                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:8px;">จำนวนเงิน</th>
                     </tr>
                     <tr>
-                        <th style="width: 15%; border: 1px solid black; text-align:center; padding:8px;">เงินสด</th>
-                        <th style="width: 15%; border: 1px solid black; text-align:center; padding:8px;">QR-Code</th>
+                        <th style="border: 1px solid black; text-align:center; padding:8px;">เงินสด</th>
+                        <th style="border: 1px solid black; text-align:center; padding:8px;">QR-Code</th>
                     </tr>
                 </thead>
                 <tbody id="print-tbody">
