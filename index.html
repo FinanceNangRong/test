@@ -27,7 +27,7 @@
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 75%;
+                width: 100%;
                 background-color: white;
                 color: black;
                 display: block !important;
@@ -45,7 +45,7 @@
             @page {
                 size: A4 portrait;
                 /* ระยะขอบมาตรฐาน 0 ซม. รอบด้าน */
-                margin: 0.5cm;
+                margin: 0cm;
             }
         }
     </style>
@@ -89,15 +89,22 @@
         let savedRecords = []; 
         let currentServicePoint = ""; 
 
-        let receiptOptionsHtml = '';
+        // สร้างตัวเลือกเลขใบเสร็จ 001-100 พร้อมช่องค้นหา
+        let receiptOptionsHtml = `
+            <div class="p-2 sticky top-0 bg-gray-50 border-b z-10 shadow-sm">
+                <input type="text" placeholder="🔍 ค้นหาเลขที่..." class="w-full border-gray-300 border rounded px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-blue-500" onkeyup="filterReceipts(this)" onclick="event.stopPropagation()">
+            </div>
+            <div class="max-h-48 overflow-y-auto">
+        `;
         for(let i=1; i<=100; i++) {
             let numStr = String(i).padStart(3, '0');
             receiptOptionsHtml += `
-                <label class="flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0">
+                <label class="receipt-label flex items-center px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0">
                     <input type="checkbox" value="${i}" class="mr-2 receipt-cb rounded text-blue-600 focus:ring-blue-500" onchange="updateReceiptInput(this)">
                     <span class="text-gray-700">${numStr}</span>
                 </label>`;
         }
+        receiptOptionsHtml += `</div>`;
 
         function CSVToArray(strData) {
             let objPattern = new RegExp(("(\\,|\\r?\\n|\\r|^)(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|([^\"\\,\\r\\n]*))"), "gi");
@@ -164,10 +171,68 @@
         }
 
         function toggleReceiptDropdown(inputEl) {
-            document.querySelectorAll('.receipt-options').forEach(el => {
-                if (el !== inputEl.nextElementSibling) el.classList.add('hidden');
+            const optionsDiv = inputEl.nextElementSibling;
+            const isHidden = optionsDiv.classList.contains('hidden');
+            
+            document.querySelectorAll('.receipt-options, .item-options').forEach(el => {
+                el.classList.add('hidden');
             });
-            inputEl.nextElementSibling.classList.toggle('hidden');
+            
+            if (isHidden) {
+                optionsDiv.classList.remove('hidden');
+            }
+        }
+
+        // ระบบค้นหาใน Dropdown เลขใบเสร็จ
+        function filterReceipts(input) {
+            const filter = input.value.toLowerCase();
+            const container = input.closest('.receipt-options');
+            const labels = container.querySelectorAll('.receipt-label');
+            labels.forEach(label => {
+                const span = label.querySelector('span');
+                if (span && span.innerText.toLowerCase().includes(filter)) {
+                    label.style.display = 'flex';
+                } else {
+                    label.style.display = 'none';
+                }
+            });
+        }
+
+        // ระบบค้นหาใน Dropdown รายการ
+        function toggleItemDropdown(input) {
+            const optionsDiv = input.nextElementSibling;
+            const isHidden = optionsDiv.classList.contains('hidden');
+            
+            document.querySelectorAll('.item-options, .receipt-options').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            if (isHidden) {
+                optionsDiv.classList.remove('hidden');
+                filterItems(input);
+            }
+        }
+
+        function filterItems(input) {
+            const optionsDiv = input.nextElementSibling;
+            optionsDiv.classList.remove('hidden'); // แสดงผลอัตโนมัติเมื่อพิมพ์
+            
+            const filter = input.value.toLowerCase();
+            const options = optionsDiv.querySelectorAll('.item-option');
+            options.forEach(opt => {
+                if (opt.innerText.toLowerCase().includes(filter)) {
+                    opt.style.display = 'block';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+        }
+
+        function selectItem(div) {
+            const container = div.closest('.item-dropdown-container');
+            const input = container.querySelector('.input-item');
+            input.value = div.dataset.value;
+            container.querySelector('.item-options').classList.add('hidden');
         }
 
         function pad3(num) {
@@ -208,6 +273,9 @@
             if(!e.target.closest('.receipt-dropdown-container')) {
                 document.querySelectorAll('.receipt-options').forEach(el => el.classList.add('hidden'));
             }
+            if(!e.target.closest('.item-dropdown-container')) {
+                document.querySelectorAll('.item-options').forEach(el => el.classList.add('hidden'));
+            }
         });
 
         function addRow() {
@@ -215,19 +283,29 @@
             const row = document.createElement('tr');
             row.className = "border-b hover:bg-gray-50";
 
-            let itemOptions = itemsList.map(item => `<option value="${item}">${item}</option>`).join('');
+            let itemOptionsHtml = itemsList.map(item => {
+                const safeItem = item.replace(/"/g, '&quot;');
+                return `<div class="item-option px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-b-0 text-gray-700" data-value="${safeItem}" onclick="selectItem(this)">${safeItem}</div>`;
+            }).join('');
 
             row.innerHTML = `
                 <td class="p-2"><input type="number" class="w-full border rounded p-1 input-bookNo" required></td>
                 <td class="p-2">
                     <div class="relative receipt-dropdown-container">
                         <input type="text" class="w-full border rounded p-1 cursor-pointer bg-white receipt-display input-receiptNo" readonly placeholder="เลือก..." onclick="toggleReceiptDropdown(this)" required>
-                        <div class="hidden absolute top-full left-0 w-48 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 max-h-48 overflow-y-auto receipt-options">
+                        <div class="hidden absolute top-full left-0 w-56 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 receipt-options">
                             ${receiptOptionsHtml}
                         </div>
                     </div>
                 </td>
-                <td class="p-2"><select class="w-full border rounded p-1 bg-white input-item" required><option value="">-- เลือกรายการ --</option>${itemOptions}</select></td>
+                <td class="p-2">
+                    <div class="relative item-dropdown-container">
+                        <input type="text" class="w-full border rounded p-1 bg-white input-item" placeholder="-- ค้นหา/เลือกรายการ --" onclick="toggleItemDropdown(this)" onkeyup="filterItems(this)" required autocomplete="off">
+                        <div class="hidden absolute top-full left-0 w-64 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 max-h-48 overflow-y-auto item-options">
+                            ${itemOptionsHtml}
+                        </div>
+                    </div>
+                </td>
                 <td class="p-2"><input type="number" step="0.01" class="w-full border rounded p-1 amount-input input-amount" required oninput="calculateTotal()"></td>
                 <td class="p-2"><input type="text" class="w-full border rounded p-1 input-note"></td>
                 <td class="p-2 text-center">
@@ -937,13 +1015,13 @@
                     </tr>
                     <!-- ส่วนหัวตารางสำหรับพิมพ์ (ล้างค่า width) -->
                     <tr>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px; font-weight: bold; vertical-align: middle;">เล่มที่/เลขที่</th>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px; font-weight: bold; vertical-align: middle;">รายการ</th>
-                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:8px; font-weight: bold; vertical-align: middle;">จำนวนเงิน</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:4px; font-weight: bold; vertical-align: middle;">เล่มที่/เลขที่</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:4px; font-weight: bold; vertical-align: middle;">รายการ</th>
+                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:4px; font-weight: bold; vertical-align: middle;">จำนวนเงิน</th>
                     </tr>
                     <tr>
-                        <th style="border: 1px solid black; text-align:center; padding:8px; font-weight: bold; vertical-align: middle;">เงินสด</th>
-                        <th style="border: 1px solid black; text-align:center; padding:8px; font-weight: bold; vertical-align: middle;">QR-Code</th>
+                        <th style="border: 1px solid black; text-align:center; padding:4px; font-weight: bold; vertical-align: middle;">เงินสด</th>
+                        <th style="border: 1px solid black; text-align:center; padding:4px; font-weight: bold; vertical-align: middle;">QR-Code</th>
                     </tr>
                 </thead>
                 <tbody id="print-tbody">
