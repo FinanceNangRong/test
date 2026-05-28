@@ -27,13 +27,14 @@
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 85%;
+                width: 100%;
                 background-color: white;
                 color: black;
                 display: block !important;
             }
             #export-table {
-                width: 85%;
+                width: 180mm;
+                max-width: 180mm;
                 border-collapse: collapse;
             }
             /* ยกเลิกแสงเงาหรือสีพื้นหลังเวลาพิมพ์ */
@@ -775,9 +776,9 @@
                     <table class="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr class="bg-gray-100 border-b">
-                                <th class="p-3 w-24">เล่มที่</th>
-                                <th class="p-3 w-32">เลขที่</th>
-                                <th class="p-3 min-w-[200px]">รายการ</th>
+                                <th class="p-3 w-24 text-center">เล่มที่</th>
+                                <th class="p-3 w-32 text-center">เลขที่</th>
+                                <th class="p-3 min-w-[200px] text-center">รายการ</th>
                                 <th class="p-3 w-32">จำนวนเงิน</th>
                                 <th class="p-3 min-w-[150px]">หมายเหตุ</th>
                                 <th class="p-3 w-16 text-center">จัดการ</th>
@@ -893,8 +894,8 @@
                         <tfoot>
                             <tr class="bg-gray-100 border-t-2 border-gray-300">
                                 <td colspan="3" class="p-4 text-right font-bold text-gray-700 text-lg border-r">รวมเงินแต่ละประเภท:</td>
-                                <td class="p-4 font-bold text-green-700 text-lg text-right border-r" id="p2-totalCash">0.00</td>
-                                <td class="p-4 font-bold text-blue-700 text-lg text-right" id="p2-totalQR">0.00</td>
+                                <td class="p-3 font-bold text-green-700 text-lg text-right border-r" id="p2-totalCash">0.00</td>
+                                <td class="p-3 font-bold text-blue-700 text-lg text-right" id="p2-totalQR">0.00</td>
                             </tr>
                             <tr class="bg-indigo-600 text-white border-t border-indigo-700">
                                 <td colspan="3" class="p-3 text-right font-bold text-lg border-r border-indigo-500">รวมเงินนำส่งทั้งสิ้น:</td>
@@ -910,7 +911,7 @@
         <!-- โครงสร้างสำหรับสั่ง Print / Export Excel (ซ่อนอยู่ตลอด) -->
         <!-- ============================================== -->
         <div id="printArea" class="hidden">
-            <table id="export-table" style="width:100%; border-collapse: collapse; text-align: left; font-family: sans-serif; font-size: 10pt; color: black;">
+            <table id="export-table" style="width: 180mm; max-width: 180mm; border-collapse: collapse; text-align: left; font-family: sans-serif; font-size: 10pt; color: black;">
                 <thead>
                     <tr>
                         <th colspan="5" style="text-align: center; font-size: 12pt; font-weight: bold; border: none; padding-bottom: 10px;">
