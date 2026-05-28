@@ -604,8 +604,7 @@
                     let printRowHtml = '';
                     if (index === 0) {
                         printRowHtml = `
-                            <td style="border: 1px solid black; padding: 5px; text-align: center; vertical-align: top;" rowspan="${itemKeys.length}">${bookNo}</td>
-                            <td style="border: 1px solid black; padding: 5px; text-align: center; vertical-align: top;" rowspan="${itemKeys.length}">${receiptFormatted}</td>
+                            <td style="border: 1px solid black; padding: 5px; text-align: center; vertical-align: top;" rowspan="${itemKeys.length}">${bookNo}/${receiptFormatted}</td>
                             <td style="border: 1px solid black; padding: 5px; text-align: left;">${item}</td>
                             <td style="border: 1px solid black; padding: 5px; text-align: right;">${cashStr}</td>
                             <td style="border: 1px solid black; padding: 5px; text-align: right;">${qrStr}</td>
@@ -869,16 +868,16 @@
 
                 <!-- ตารางบนหน้าจอ -->
                 <div class="overflow-x-auto border rounded-lg shadow-sm">
-                    <table class="w-full text-left border-collapse min-w-[500px]">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
                         <thead>
                             <tr class="bg-indigo-100 border-b border-indigo-200 text-indigo-900">
                                 <th class="p-3 w-40 border-r border-indigo-200 text-center align-middle" rowspan="2">เล่มที่/เลขที่</th>
                                 <th class="p-3 min-w-[200px] border-r border-indigo-200 align-middle text-center" rowspan="2">รายการ</th>
                                 <th class="p-2 border-b border-indigo-200 text-center" colspan="2">จำนวนเงิน</th>
                             </tr>
-                            <tr class="bg-indigo-60 border-b-2 border-indigo-200 text-indigo-900">
-                                <th class="p-2 w-25 border-r border-indigo-200 text-center">เงินสด</th>
-                                <th class="p-2 w-25 border-r border-indigo-200 text-center">QR-Code</th>
+                            <tr class="bg-indigo-50 border-b-2 border-indigo-200 text-indigo-900">
+                                <th class="p-2 w-1/2 border-r border-indigo-200 text-center">เงินสด</th>
+                                <th class="p-2 w-1/2 text-center">QR-Code</th>
                             </tr>
                         </thead>
                         <tbody id="p2-summaryTable">
@@ -912,36 +911,35 @@
             <table id="export-table" style="width: 17cm; margin: 0 auto; border-collapse: collapse; text-align: left; font-family: sans-serif; font-size: 10pt; color: black; table-layout: fixed;">
                 <thead>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 11pt; font-weight: bold; border: none; padding-bottom: 10px;">
+                        <th colspan="4" style="text-align: center; font-size: 11pt; font-weight: bold; border: none; padding-bottom: 10px;">
                             สถานบริการสาธารณสุข โรงพยาบาลนางรองบันทึกการนำส่งเงิน
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 5px; font-weight: bold;">
+                        <th colspan="4" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 5px; font-weight: bold;">
                             จากจุดบริการ <span id="print-servicePoint">...</span>
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 5px; font-weight: bold;">
+                        <th colspan="4" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 5px; font-weight: bold;">
                             เวร <span id="print-shift">...</span>
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 5px; font-weight: bold;">
+                        <th colspan="4" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 5px; font-weight: bold;">
                             เรียน ผู้อำนวยการโรงพยาบาลนางรอง
                         </th>
                     </tr>
                     <tr>
-                        <th colspan="5" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 15px; font-weight: bold;">
+                        <th colspan="4" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 15px; font-weight: bold;">
                             <span id="print-date">...</span>
                         </th>
                     </tr>
                     <!-- ส่วนหัวตารางสำหรับพิมพ์ -->
                     <tr>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 30mm; font-weight: bold; vertical-align: middle;">เล่มที่ใบเสร็จ</th>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 2.48cm; font-weight: bold; vertical-align: middle;">เลขที่ใบเสร็จ</th>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 30mm; font-weight: bold; vertical-align: middle;">รายการ</th>
-                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 3.8cm; font-weight: bold; vertical-align: middle;">จำนวนเงิน</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 5cm; font-weight: bold; vertical-align: middle;">เล่มที่/เลขที่</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 9.28cm; font-weight: bold; vertical-align: middle;">รายการ</th>
+                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 3cm; font-weight: bold; vertical-align: middle;">จำนวนเงิน</th>
                     </tr>
                     <tr>
                         <th style="border: 1px solid black; text-align:center; padding:5px; width: 1.9cm; font-weight: bold; vertical-align: middle;">เงินสด</th>
@@ -953,22 +951,22 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <th colspan="3" style="border: 1px solid black; text-align:right; padding:5px; font-weight: bold;">รวมเงินแต่ละประเภท:</th>
+                        <th colspan="2" style="border: 1px solid black; text-align:right; padding:5px; font-weight: bold;">รวมเงินแต่ละประเภท:</th>
                         <th style="border: 1px solid black; text-align:right; padding:5px; font-weight: bold;" id="print-totalCash">0.00</th>
                         <th style="border: 1px solid black; text-align:right; padding:5px; font-weight: bold;" id="print-totalQR">0.00</th>
                     </tr>
                     <tr>
-                        <th colspan="3" style="border: 1px solid black; text-align:right; padding:5px; font-weight: bold;">รวมเงินนำส่งทั้งสิ้น:</th>
+                        <th colspan="2" style="border: 1px solid black; text-align:right; padding:5px; font-weight: bold;">รวมเงินนำส่งทั้งสิ้น:</th>
                         <th colspan="2" style="border: 1px solid black; text-align:center; padding:5px; font-weight: bold;" id="print-totalAll">0.00</th>
                     </tr>
                     <tr>
-                        <td colspan="5" style="border: 1px solid black; text-align:center; font-weight:bold; padding:10px; font-size: 11pt;">
+                        <td colspan="4" style="border: 1px solid black; text-align:center; font-weight:bold; padding:10px; font-size: 11pt;">
                             (ตัวอักษร) <span id="print-thaiText">ศูนย์บาทถ้วน</span>
                         </td>
                     </tr>
                     <!-- ลายเซ็น -->
                     <tr>
-                        <td colspan="3" style="border: none; text-align:left; padding-top: 50px; font-size: 10pt; vertical-align: top; padding-left: 10px;">
+                        <td colspan="2" style="border: none; text-align:left; padding-top: 50px; font-size: 10pt; vertical-align: top; padding-left: 10px;">
                             (.........................................)ผู้รับเงิน
                         </td>
                         <td colspan="2" style="border: none; text-align:center; padding-top: 50px; font-size: 10pt; vertical-align: top;">
