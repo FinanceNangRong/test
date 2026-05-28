@@ -875,7 +875,7 @@
                             <tr class="bg-indigo-100 border-b border-indigo-200 text-indigo-900">
                                 <th class="p-3 w-20 border-r border-indigo-200 text-center align-middle" rowspan="2">เล่มที่</th>
                                 <th class="p-3 w-20 border-r border-indigo-200 text-center align-middle" rowspan="2">เลขที่</th>
-                                <th class="p-3 min-w-[150px] border-r border-indigo-200 align-middle" rowspan="2">รายการ</th>
+                                <th class="p-3 min-w-[150px] border-r border-indigo-200 align-middle text-center" rowspan="2">รายการ</th>
                                 <th class="p-2 border-b border-indigo-200 text-center" colspan="2">จำนวนเงิน</th>
                             </tr>
                             <tr class="bg-indigo-50 border-b-2 border-indigo-200 text-indigo-900">
@@ -918,6 +918,21 @@
                             สถานบริการสาธารณสุข โรงพยาบาลนางรองบันทึกการนำส่งเงิน
                         </th>
                     </tr>
+                    <tr>
+                        <th colspan="5" style="text-align: center; font-size: 12pt; border: none; padding-bottom: 5px; font-weight: normal;">
+                            จากจุดบริการ <span id="print-servicePoint">...</span>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th colspan="5" style="text-align: center; font-size: 12pt; border: none; padding-bottom: 5px; font-weight: normal;">
+                            เวร <span id="print-shift">...</span>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th colspan="5" style="text-align: center; font-size: 12pt; border: none; padding-bottom: 5px; font-weight: normal;">
+                            เรียน ผู้อำนวยการโรงพยาบาลนางรอง
+                        </th>
+                    </tr>
                     <!-- ส่วนหัวตารางสำหรับพิมพ์ -->
                     <tr>
                         <th colspan="5" style="text-align: center; font-size: 12pt; border: none; padding-bottom: 20px; font-weight: normal;">
@@ -926,10 +941,10 @@
                     </tr>
                     <!-- ส่วนหัวตารางสำหรับพิมพ์ -->
                     <tr>
-                        <th rowspan="1" style="border: 1px solid black; text-align:center; padding:8px; width: 2cm;">เล่มที่</th>
-                        <th rowspan="1" style="border: 1px solid black; text-align:center; padding:8px; width: 1.5cm;">เลขที่</th>
-                        <th rowspan="1" style="border: 1px solid black; text-align:center; padding:8px; width: 6cm;">รายการ</th>
-                        <th colspan="1" style="border: 1px solid black; text-align:center; padding:8px; width: 5cm;">จำนวนเงิน</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px; width: 2cm;">เล่มที่</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px; width: 1.5cm;">เลขที่</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:8px; width: 6cm;">รายการ</th>
+                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:8px; width: 5cm;">จำนวนเงิน</th>
                     </tr>
                     <tr>
                         <th style="border: 1px solid black; text-align:center; padding:8px; width: 2.5cm;">เงินสด</th>
@@ -950,7 +965,7 @@
                         <th colspan="2" style="border: 1px solid black; text-align:center; padding:8px; font-size: 8pt;" id="print-totalAll">0.00</th>
                     </tr>
                     <tr>
-                        <td colspan="5" style="border: 1px solid black; text-align:center; font-weight:bold; padding:15px; font-size: 12pt;">
+                        <td colspan="5" style="border: 1px solid black; text-align:center; font-weight:bold; padding:15px; font-size: 8pt;">
                             (ตัวอักษร) <span id="print-thaiText">ศูนย์บาทถ้วน</span>
                         </td>
                     </tr>
