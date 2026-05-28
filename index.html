@@ -882,68 +882,20 @@
                         </thead>
                         <tbody id="p2-summaryTable">
                             <tr>
-                                <td colspan="4" class="p-10 text-center text-gray-400 bg-gray-50">
-                                    <i class="fa-solid fa-table-list text-5xl mb-3 text-gray-300"></i>
-                                    <p class="text-lg">กรุณาเลือกเงื่อนไขและกดปุ่ม "ดึงข้อมูล"</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr class="bg-gray-100 border-t-2 border-gray-300">
-                                <td colspan="2" class="p-4 text-right font-bold text-gray-700 text-lg border-r">รวมเงินแต่ละประเภท:</td>
-                                <td class="p-3 font-bold text-green-700 text-lg text-right border-r" id="p2-totalCash">0.00</td>
-                                <td class="p-3 font-bold text-blue-700 text-lg text-right" id="p2-totalQR">0.00</td>
-                            </tr>
-                            <tr class="bg-indigo-600 text-white border-t border-indigo-700">
-                                <td colspan="2" class="p-3 text-right font-bold text-lg border-r border-indigo-500">รวมเงินนำส่งทั้งสิ้น:</td>
-                                <td colspan="2" class="p-3 font-bold text-xl text-center" id="p2-totalAll">0.00</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ============================================== -->
-        <!-- โครงสร้างสำหรับสั่ง Print / Export Excel (ซ่อนอยู่ตลอด) -->
-        <!-- ============================================== -->
-        <div id="printArea" class="hidden">
-            <table id="export-table" style="width: 18cm; margin: 0 auto; border-collapse: collapse; text-align: left; font-family: sans-serif; font-size: 10pt; color: black; table-layout: fixed;">
-                <thead>
-                    <tr>
-                        <th colspan="4" style="text-align: center; font-size: 12pt; font-weight: bold; border: none; padding-bottom: 10px;">
-                            สถานบริการสาธารณสุข โรงพยาบาลนางรองบันทึกการนำส่งเงิน
-                        </th>
-                    </tr>
-                    <tr>
-                        <th colspan="4" style="text-align: center; font-size: 11pt; border: none; padding-bottom: 5px; font-weight: bold;">
-                            จากจุดบริการ <span id="print-servicePoint">...</span>
-                        </th>
-                    </tr>
-                    <tr>
-                        <th colspan="4" style="text-align: center; font-size: 11pt; border: none; padding-bottom: 5px; font-weight: bold;">
-                            เวร <span id="print-shift">...</span>
-                        </th>
-                    </tr>
-                    <tr>
-                        <th colspan="4" style="text-align: center; font-size: 11pt; border: none; padding-bottom: 5px; font-weight: bold;">
-                            เรียน ผู้อำนวยการโรงพยาบาลนางรอง
-                        </th>
-                    </tr>
-                    <tr>
-                        <th colspan="4" style="text-align: center; font-size: 11pt; border: none; padding-bottom: 20px; font-weight: bold;">
+                        <th colspan="5" style="text-align: center; font-size: 10pt; border: none; padding-bottom: 15px; font-weight: bold;">
                             <span id="print-date">...</span>
                         </th>
                     </tr>
                     <!-- ส่วนหัวตารางสำหรับพิมพ์ -->
                     <tr>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 30mm; font-weight: bold;">เล่มที่/เลขที่</th>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 110mm; font-weight: bold;">รายการ</th>
-                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 30mm; font-weight: bold;">จำนวนเงิน</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 30mm; font-weight: bold; vertical-align: middle;">เล่มที่ใบเสร็จ</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 2.48cm; font-weight: bold; vertical-align: middle;">เลขที่ใบเสร็จ</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 30mm; font-weight: bold; vertical-align: middle;">รายการ</th>
+                        <th colspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 3.8cm; font-weight: bold; vertical-align: middle;">จำนวนเงิน</th>
                     </tr>
                     <tr>
-                        <th style="border: 1px solid black; text-align:center; padding:5px; width: 15mm; font-weight: bold;">เงินสด</th>
-                        <th style="border: 1px solid black; text-align:center; padding:5px; width: 15mm; font-weight: bold;">QR-Code</th>
+                        <th style="border: 1px solid black; text-align:center; padding:5px; width: 1.9cm; font-weight: bold; vertical-align: middle;">เงินสด</th>
+                        <th style="border: 1px solid black; text-align:center; padding:5px; width: 1.9cm; font-weight: bold; vertical-align: middle;">QR-Code</th>
                     </tr>
                 </thead>
                 <tbody id="print-tbody">
