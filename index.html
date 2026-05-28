@@ -27,14 +27,14 @@
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 100%;
+                width: 80;
                 background-color: white;
                 color: black;
                 display: block !important;
             }
             #export-table {
-                width: 180mm;
-                max-width: 180mm;
+                width: 195mm;
+                max-width: 195mm;
                 border-collapse: collapse;
             }
             /* ยกเลิกแสงเงาหรือสีพื้นหลังเวลาพิมพ์ */
@@ -45,8 +45,8 @@
             }
             @page {
                 size: A4 portrait;
-                /* ปรับขอบบนเป็น 20mm ตามที่ต้องการ */
-                margin: 2cm 2.5cm 2.5cm 2.5cm;
+                /* ปรับขอบซ้ายขวาให้แคบลงเพื่อรองรับตารางกว้าง 19.5cm */
+                margin: 2cm 0.5cm 2.5cm 0.5cm;
             }
         }
     </style>
@@ -911,7 +911,7 @@
         <!-- โครงสร้างสำหรับสั่ง Print / Export Excel (ซ่อนอยู่ตลอด) -->
         <!-- ============================================== -->
                 <div id="printArea" class="hidden">
-            <table id="export-table" style="width: 15.5cm; margin: 0 auto; border-collapse: collapse; text-align: left; font-family: sans-serif; font-size: 8pt; color: black; table-layout: fixed;">
+            <table id="export-table" style="width: 19.5cm; margin: 0 auto; border-collapse: collapse; text-align: left; font-family: sans-serif; font-size: 8pt; color: black; table-layout: fixed;">
                 <thead>
                     <tr>
                         <th colspan="5" style="text-align: center; font-size: 8pt; font-weight: bold; border: none; padding-bottom: 8px;">
@@ -943,7 +943,7 @@
                     <tr>
                         <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 2cm;">เล่มที่</th>
                         <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 1.5cm;">เลขที่</th>
-                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 6cm;">รายการ</th>
+                        <th rowspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 10cm;">รายการ</th>
                         <th colspan="2" style="border: 1px solid black; text-align:center; padding:5px; width: 6cm;">จำนวนเงิน</th>
                     </tr>
                     <tr>
