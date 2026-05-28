@@ -607,13 +607,13 @@
                         printRowHtml = `
                             <td style="border: 1px solid black; padding: 8px; text-align: center; vertical-align: top;" rowspan="${itemKeys.length}">${bookNo}</td>
                             <td style="border: 1px solid black; padding: 8px; text-align: center; vertical-align: top;" rowspan="${itemKeys.length}">${receiptFormatted}</td>
-                            <td style="border: 1px solid black; padding: 8px; text-align: center;">${item}</td>
+                            <td style="border: 1px solid black; padding: 8px; text-align: left;">${item}</td>
                             <td style="border: 1px solid black; padding: 8px; text-align: right;">${cashStr}</td>
                             <td style="border: 1px solid black; padding: 8px; text-align: right;">${qrStr}</td>
                         `;
                     } else {
                         printRowHtml = `
-                            <td style="border: 1px solid black; padding: 8px; text-align: center;">${item}</td>
+                            <td style="border: 1px solid black; padding: 8px; text-align: left;">${item}</td>
                             <td style="border: 1px solid black; padding: 8px; text-align: right;">${cashStr}</td>
                             <td style="border: 1px solid black; padding: 8px; text-align: right;">${qrStr}</td>
                         `;
@@ -875,7 +875,7 @@
                             <tr class="bg-indigo-100 border-b border-indigo-200 text-indigo-900">
                                 <th class="p-3 w-20 border-r border-indigo-200 text-center align-middle" rowspan="2">เล่มที่</th>
                                 <th class="p-3 w-20 border-r border-indigo-200 text-center align-middle" rowspan="2">เลขที่</th>
-                                <th class="p-3 min-w-[150px] border-r border-indigo-200 align-middle text-center" rowspan="2">รายการ</th>
+                                <th class="p-3 min-w-[200px] border-r border-indigo-200 align-middle text-center" rowspan="2">รายการ</th>
                                 <th class="p-2 border-b border-indigo-200 text-center" colspan="2">จำนวนเงิน</th>
                             </tr>
                             <tr class="bg-indigo-50 border-b-2 border-indigo-200 text-indigo-900">
