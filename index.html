@@ -761,7 +761,7 @@
                                         <td style="padding: 5px 10px; font-size: 11pt;"><strong>ผู้ส่งเงิน:</strong> <span style="color: #1e40af;">${selStaff}</span></td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 5px 10px; font-size: 11pt;"><strong>วันที่ทำรายการ:</strong> <span style="color: #1e40af;">${formatThaiDateFull(selDate)}</span></td>
+                                        <td style="padding: 5px 10px; font-size: 11pt;"><strong>วันที่ทำรายการ:</strong> <span style="color: #1e40af;">${selDate}</span></td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 5px 10px; font-size: 11pt;"><strong>จุดบริการ:</strong> <span style="color: #1e40af;">${currentServicePoint}</span></td>
@@ -844,7 +844,7 @@
                             <td style="padding: 5px 10px; font-size: 11pt;"><strong>ผู้ส่งเงิน:</strong> <span style="color: #1e40af;">${selStaff}</span></td>
                         </tr>
                         <tr>
-                            <td style="padding: 5px 10px; font-size: 11pt;"><strong>วันที่ทำรายการ:</strong> <span style="color: #1e40af;">${formatThaiDateFull(selDate)}</span></td>
+                            <td style="padding: 5px 10px; font-size: 11pt;"><strong>วันที่ทำรายการ:</strong> <span style="color: #1e40af;">${selDate}</span></td>
                         </tr>
                         <tr>
                             <td style="padding: 5px 10px; font-size: 11pt;"><strong>จุดบริการ:</strong> <span style="color: #1e40af;">${currentServicePoint}</span></td>
@@ -1256,6 +1256,37 @@
             generatePrintAreaHTML(printRows, displayDateLabel, finalServicePoint, shiftLabel, staffLabel, positionLabel, totalCash, totalQR, grandTotal);
 
             document.getElementById('p3-btn-actions').classList.remove('hidden');
+        }
+
+        // ==========================================
+        // ฟังก์ชันสั่งพิมพ์และส่งออกเอกสารที่กู้คืนกลับมา
+        // ==========================================
+        function executePrint() { 
+            window.print(); 
+        }
+
+        function exportExcel() {
+            const table = document.getElementById("export-table");
+            let html = table.outerHTML;
+            let dataUri = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent('<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"></head><body>' + html + '</body></html>');
+            
+            // ตรวจสอบวันที่จากหน้าจอที่เปิดใช้งานอยู่แบบไดนามิกเพื่อใช้ตั้งชื่อไฟล์
+            let dateStr = "รายงาน";
+            const p2DateEl = document.getElementById('p2-date');
+            const p3DateEl = document.getElementById('p3-date-input');
+            
+            if (p2DateEl && p2DateEl.value) {
+                dateStr = p2DateEl.value.replace(/\//g, '-');
+            } else if (p3DateEl && p3DateEl.value) {
+                dateStr = p3DateEl.value.replace(/\//g, '-');
+            }
+            
+            let link = document.createElement('a');
+            link.href = dataUri; 
+            link.download = `บันทึกนำส่งเงิน_${dateStr}.xls`;
+            document.body.appendChild(link); 
+            link.click(); 
+            document.body.removeChild(link);
         }
 
         window.onload = loadData;
