@@ -817,6 +817,372 @@
 </html>
     </template>
 
+    <template id="temp_ap_3">
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>03. รายงานเจ้าหนี้แยกประเภท รายตัว</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html{font-size:100%;}body{font-family:'Noto Sans Thai',sans-serif;background-color:#f3f4f6;}
+        .print-only{display:none;}
+        @media print{
+            @page{size:A4 landscape;margin:10mm;}
+            body,html{background-color:white;height:auto!important;overflow:visible!important;display:block!important;}
+            .h-screen,.overflow-hidden,.overflow-auto,.overflow-x-auto,.flex-1,main,#printArea,#contentContainer{height:auto!important;overflow:visible!important;display:block!important;position:static!important;margin:0!important;padding:0!important;page-break-inside:auto!important;break-inside:auto!important;}
+            .shadow-sm{box-shadow:none!important;}.rounded-lg{border-radius:0!important;}
+            .no-print{display:none!important;}.print-only{display:block!important;}.print-full-width{width:100%!important;margin:0!important;padding:0!important;box-shadow:none!important;}
+            table{width:100%;border-collapse:collapse;page-break-inside:auto;}tr{page-break-inside:avoid;page-break-after:auto;}thead{display:table-header-group;}tfoot{display:table-footer-group;}
+            th,td{border:1px solid #000!important;padding:0.6mm 2px!important;height:0.5mm!important;line-height:1!important;font-size:6.5pt!important;}
+            th{background-color:#f3f4f6!important;-webkit-print-color-adjust:exact;font-weight:bold!important;}
+            td{font-weight:normal!important;}td.font-medium,td.font-semibold,td.font-bold{font-weight:normal!important;}
+            tfoot td{background-color:#f3f4f6!important;-webkit-print-color-adjust:exact;font-weight:bold!important;}
+            .print-fixed-table{table-layout:fixed!important;width:100%!important;max-width:100%!important;margin:0 auto!important;}
+            .print-fixed-table th,.print-fixed-table td{white-space:normal!important;word-wrap:break-word!important;overflow-wrap:break-word!important;}
+            .print-truncate{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;word-wrap:normal!important;overflow-wrap:normal!important;}
+            tbody.page-break-before{page-break-before:always!important;break-before:page!important;}
+        }
+        ::-webkit-scrollbar{width:8px;height:8px;}::-webkit-scrollbar-track{background:#f1f1f1;}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}::-webkit-scrollbar-thumb:hover{background:#94a3b8;}
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+    <header class="bg-blue-800 text-white p-4 shadow-md no-print shrink-0 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <a href="https://financenangrong.github.io/financial-system/" class="text-white hover:bg-blue-700 focus:outline-none p-2 rounded transition-colors flex items-center gap-1" title="ย้อนกลับ">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <span class="hidden sm:inline font-medium text-sm">ย้อนกลับ</span>
+            </a>
+            <h1 class="text-1xl font-bold">03. รายงานเจ้าหนี้แยกประเภท รายตัว</h1>
+        </div>
+        <div id="statusBadge" class="text-sm px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-medium flex items-center gap-2">พร้อมใช้งาน</div>
+    </header>
+    <main class="flex-1 bg-white overflow-auto p-6 print-full-width" id="printArea">
+        <div id="contentContainer" class="max-w-7xl mx-auto"></div>
+    </main>
+
+    <script>
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-vY0-Ic04efRHyFptGVLR3UCipBUBhJiFSCWl_3RDAbQP6cUdQaz53D_1Sru3rg/pub?output=csv";
+        let appData7H=[], isLoadingData7H=true;
+        let selectedCategories_forReport7H=[], currentAvailableCategories7H=[], report7HDropdownOpen=false;
+        let selectedStatuses_forReport7H=[], currentAvailableStatuses7H=[], statusDropdownOpen=false;
+        let startDate_receive_forReport7H="", endDate_receive_forReport7H="", startDate_pay_forReport7H="", endDate_pay_forReport7H="";
+
+        function parseNumberValue(v){if(!v)return 0;if(typeof v==='string')v=v.replace(/,/g,'');const n=parseFloat(v);return isNaN(n)?0:n;}
+        function formatNumber(n){const v=parseFloat(n);return (isNaN(v)||v===0)?'0.00':v.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});}
+        const parseDateForFilter=(s)=>{if(!s||String(s).trim()==='-'||String(s).trim()==='')return null;let c=String(s).trim();const p=c.split(/[\/\-]/);if(p.length===3){let d=parseInt(p[0],10),m=parseInt(p[1],10)-1,y=parseInt(p[2],10);if(p[0].length===4){y=parseInt(p[0],10);m=parseInt(p[1],10)-1;d=parseInt(p[2],10);}if(y<100)y+=y>40?2500:2000;if(y>=2400)y-=543;let dObj=new Date(y,m,d);if(!isNaN(dObj.getTime()))return dObj.getTime();}const tS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'],tF=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'],tM=c.match(/(\d{1,2})\s+([ก-๙\.]+)\s+(\d{2,4})/);if(tM){let d=parseInt(tM[1],10),mo=tM[2],y=parseInt(tM[3],10),m=tS.findIndex(t=>mo.includes(t));if(m===-1)m=tF.findIndex(t=>mo.includes(t));if(m===-1)m=0;if(y<100)y+=y>40?2500:2000;if(y>=2400)y-=543;return new Date(y,m,d).getTime();}if(!isNaN(c)&&Number(c)>10000)return new Date(Date.UTC(1899,11,30)).getTime()+Number(c)*86400000;let dObj=new Date(c);return isNaN(dObj.getTime())?null:dObj.getTime();};
+        function formatThaiDate(v,s=false){if(!v)return '-';let d,m,y;if(typeof v==='number'){const doObj=new Date(new Date(Date.UTC(1899,11,30)).getTime()+v*86400000);d=doObj.getUTCDate();m=doObj.getUTCMonth()+1;y=doObj.getUTCFullYear();if(y<2500)y+=543;}else{let ds=String(v).trim();const p=ds.split(/[-/]/);if(p.length===3){d=parseInt(p[0]);m=parseInt(p[1]);y=parseInt(p[2]);if(p[0].length===4){y=parseInt(p[0]);m=parseInt(p[1]);d=parseInt(p[2]);}if(!isNaN(d)&&!isNaN(m)&&!isNaN(y)){if(y<100)y+=y>=50?2500:2000;if(y<2500)y+=543;}else return ds;}else return ds;}return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${s?String(y).slice(-2):y}`;}
+        function filterDropdownOptions(i,t){const c=document.getElementById(i);if(!c)return;const ls=c.getElementsByTagName('label'),f=t.toLowerCase().replace(/\s+/g,'');for(let j=0;j<ls.length;j++){const s=ls[j].querySelector('span');if(s)ls[j].style.display=(s.textContent||s.innerText).toLowerCase().replace(/\s+/g,'').indexOf(f)>-1?"":"none";}}
+
+        function toggleReport7HDropdown() { report7HDropdownOpen = !report7HDropdownOpen; const dd = document.getElementById('catDropdown7H'); if (dd) report7HDropdownOpen ? dd.classList.remove('hidden') : dd.classList.add('hidden'); }
+        function toggleStatusDropdown() { statusDropdownOpen = !statusDropdownOpen; const dd = document.getElementById('statusDropdown7H'); if (dd) statusDropdownOpen ? dd.classList.remove('hidden') : dd.classList.add('hidden'); }
+        
+        function updateDataDisplay7H() {
+            const container = document.getElementById('tableDataContainer7H');
+            if (container) {
+                container.innerHTML = generateTableHTML7H();
+            }
+            const btnSpan = document.querySelector('#catDropdownBtn7H span');
+            if (btnSpan) {
+                btnSpan.textContent = selectedCategories_forReport7H.length > 0 ? selectedCategories_forReport7H.join(', ') : '-- กรุณาเลือกหมวดหมู่ --';
+            }
+            const checkboxes = document.querySelectorAll('#catListContainer7H input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = selectedCategories_forReport7H.includes(cb.value);
+            });
+
+            const statusBtnSpan = document.querySelector('#statusDropdownBtn7H span');
+            if (statusBtnSpan) {
+                statusBtnSpan.textContent = selectedStatuses_forReport7H.length > 0 ? selectedStatuses_forReport7H.join(', ') : '-- กรุณาเลือกสถานะ --';
+            }
+            const statusCheckboxes = document.querySelectorAll('#statusListContainer7H input[type="checkbox"]');
+            statusCheckboxes.forEach(cb => {
+                cb.checked = selectedStatuses_forReport7H.includes(cb.value);
+            });
+        }
+
+        function selectAllCategories7H() { selectedCategories_forReport7H = [...currentAvailableCategories7H]; updateDataDisplay7H(); }
+        function clearAllCategories7H() { selectedCategories_forReport7H = []; updateDataDisplay7H(); }
+        function updateReport7HCategoryFilter(val, isChecked) { if (isChecked) { if (!selectedCategories_forReport7H.includes(val)) selectedCategories_forReport7H.push(val); } else { selectedCategories_forReport7H = selectedCategories_forReport7H.filter(item => item !== val); } updateDataDisplay7H(); }
+        
+        function selectAllStatuses7H() { selectedStatuses_forReport7H = [...currentAvailableStatuses7H]; updateDataDisplay7H(); }
+        function clearAllStatuses7H() { selectedStatuses_forReport7H = []; updateDataDisplay7H(); }
+        function updateReport7HStatusFilter(val, isChecked) { if (isChecked) { if (!selectedStatuses_forReport7H.includes(val)) selectedStatuses_forReport7H.push(val); } else { selectedStatuses_forReport7H = selectedStatuses_forReport7H.filter(item => item !== val); } updateDataDisplay7H(); }
+
+        function updateReport7HDates(type, val) { if (type === 'receive_start') startDate_receive_forReport7H = val; if (type === 'receive_end') endDate_receive_forReport7H = val; if (type === 'pay_start') startDate_pay_forReport7H = val; if (type === 'pay_end') endDate_pay_forReport7H = val; updateDataDisplay7H(); }
+
+        window.addEventListener('click', function(e) {
+            const dd = document.getElementById('catDropdown7H'), btn = document.getElementById('catDropdownBtn7H');
+            if (dd && btn && report7HDropdownOpen && !dd.contains(e.target) && !btn.contains(e.target)) { report7HDropdownOpen = false; dd.classList.add('hidden'); }
+
+            const sdd = document.getElementById('statusDropdown7H'), sbtn = document.getElementById('statusDropdownBtn7H');
+            if (sdd && sbtn && statusDropdownOpen && !sdd.contains(e.target) && !sbtn.contains(e.target)) { statusDropdownOpen = false; sdd.classList.add('hidden'); }
+        });
+
+        function loadData() {
+            isLoadingData7H = true; renderUI();
+            Papa.parse(CSV_URL, {
+                download: true, header: false,
+                complete: function(results) {
+                    if(results.data.length < 5) { appData7H = []; }
+                    else {
+                        appData7H = results.data.slice(4).filter(row => row.length > 0 && row.some(cell => cell !== ""));
+                        window.report7HInitialized = false; 
+                        startDate_receive_forReport7H = ""; endDate_receive_forReport7H = ""; startDate_pay_forReport7H = ""; endDate_pay_forReport7H = "";
+                    }
+                    isLoadingData7H = false; renderUI();
+                }, error: function() { appData7H = []; isLoadingData7H = false; renderUI(); }
+            });
+        }
+
+        function generateTableHTML7H() {
+            const printTitle = `รายงานเจ้าหนี้แยกประเภท รายตัว`;
+
+            const companyGroups = {};
+            let sumGrandE = 0, sumGrandF = 0, sumGrandG = 0, sumGrandH = 0;
+
+            appData7H.forEach(row => {
+                if (parseNumberValue(row[4]) === 0 && parseNumberValue(row[5]) === 0 && parseNumberValue(row[6]) === 0 && parseNumberValue(row[7]) === 0) return;
+                
+                let cat = String(row[12] || '').trim() || 'ไม่ระบุหมวดหมู่';
+                if (selectedCategories_forReport7H.length > 0 && !selectedCategories_forReport7H.includes(cat)) return;
+                
+                let status = String(row[22] || '').trim() || 'ไม่ระบุสถานะ';
+                if (selectedStatuses_forReport7H.length > 0 && !selectedStatuses_forReport7H.includes(status)) return;
+                
+                const rec = parseDateForFilter(row[1]), pay = parseDateForFilter(row[8]);
+                if (startDate_receive_forReport7H) { const sDate = new Date(startDate_receive_forReport7H); sDate.setHours(0,0,0,0); if (!rec || rec < sDate.getTime()) return; }
+                if (endDate_receive_forReport7H) { const eDate = new Date(endDate_receive_forReport7H); eDate.setHours(23,59,59,999); if (!rec || rec > eDate.getTime()) return; }
+                if (startDate_pay_forReport7H) { const sDate = new Date(startDate_pay_forReport7H); sDate.setHours(0,0,0,0); if (!pay || pay < sDate.getTime()) return; }
+                if (endDate_pay_forReport7H) { const eDate = new Date(endDate_pay_forReport7H); eDate.setHours(23,59,59,999); if (!pay || pay > eDate.getTime()) return; }
+
+                const comp = String(row[2]||'').trim() || 'ไม่ระบุบริษัท';
+                const deliveryNote = row[3] ? String(row[3]).trim() : '-';
+                const displayDate = row[1] ? String(row[1]).trim() : '-';
+                const statusDate = row[23] ? String(row[23]).trim() : '-';
+                const subKey = cat + '|' + displayDate + '|' + statusDate + '|' + deliveryNote;
+
+                if (!companyGroups[comp]) companyGroups[comp] = {};
+                if (!companyGroups[comp][subKey]) companyGroups[comp][subKey] = { cat: cat, deliveryNote: deliveryNote, date: displayDate, statusDate: statusDate, ts: rec || 0, e: 0, f: 0, g: 0, h: 0 };
+                
+                companyGroups[comp][subKey].e += parseNumberValue(row[4]);
+                companyGroups[comp][subKey].f += parseNumberValue(row[5]);
+                companyGroups[comp][subKey].g += parseNumberValue(row[6]);
+                companyGroups[comp][subKey].h += parseNumberValue(row[7]);
+                
+                sumGrandE += parseNumberValue(row[4]);
+                sumGrandF += parseNumberValue(row[5]);
+                sumGrandG += parseNumberValue(row[6]);
+                sumGrandH += parseNumberValue(row[7]);
+            });
+
+            // เรียงลำดับตามชื่อบริษัท
+            const sortedComps = Object.keys(companyGroups).sort((a, b) => a.localeCompare(b, 'th'));
+
+            let tableHTML = `<h3 class="text-xl font-bold text-center mb-4 print-only">${printTitle}</h3>`;
+            tableHTML += `
+                <div class="overflow-x-auto overflow-y-auto max-h-[600px] bg-white rounded-lg border border-gray-200 shadow-sm flex justify-center relative">
+                    <table class="min-w-full text-[12.6px] text-left whitespace-nowrap print-fixed-table">
+                        <thead class="bg-blue-50 text-blue-900 border-b border-gray-200 sticky top-0 z-10 shadow-sm outline outline-1 outline-gray-200">
+                            <tr>
+                                <th class="px-3 py-2 font-semibold text-center w-10 bg-blue-50">No.</th>
+                                <th class="px-3 py-2 font-semibold text-center bg-blue-50" style="width: 40mm; min-width: 40mm; max-width: 40mm;">บริษัท/หจก/ร้าน</th>
+                                <th class="px-3 py-2 font-semibold text-center bg-blue-50" style="width: 30mm; min-width: 30mm;">เลขที่ใบส่งของ</th>
+                                <th class="px-3 py-2 font-semibold text-center bg-blue-50" style="width: 50mm; min-width: 50mm;">หมวดหมู่</th>
+                                <th class="px-3 py-2 font-semibold text-center bg-blue-50" style="width: 25mm; min-width: 20mm;">วันที่ตรวจรับ</th>
+                                <th class="px-3 py-2 font-semibold text-center bg-blue-50" style="width: 25mm; min-width: 20mm;">วันที่สถานะ</th>
+                                <th class="px-3 py-2 font-semibold text-center bg-blue-50" style="width: 20mm; min-width: 20mm;">จำนวนเงิน</th>
+                                <th class="px-3 py-2 font-semibold text-center bg-blue-50" style="width: 20mm; min-width: 20mm;">จ่าย</th>
+                                <th class="px-3 py-2 font-semibold text-center bg-blue-50" style="width: 20mm; min-width: 20mm;">ปรับปรุง</th>
+                                <th class="px-3 py-2 font-semibold text-center bg-blue-50" style="width: 20mm; min-width: 20mm;">คงเหลือ</th>
+                            </tr>
+                        </thead>
+            `;
+
+            if (sortedComps.length === 0) {
+                tableHTML += `<tbody><tr><td colspan="10" class="px-4 py-6 text-center text-gray-500 border-b border-gray-200">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr></tbody>`;
+            } else {
+                tableHTML += `<tbody>`;
+                let index = 1;
+                
+                sortedComps.forEach(comp => {
+                    const subKeys = Object.keys(companyGroups[comp]).sort((a, b) => {
+                        const itemA = companyGroups[comp][a];
+                        const itemB = companyGroups[comp][b];
+                        const catCmp = itemA.cat.localeCompare(itemB.cat, 'th');
+                        if (catCmp !== 0) return catCmp;
+                        return itemA.ts - itemB.ts;
+                    });
+                    const showSubtotal = true; // แสดงบรรทัดรวมยอดทุกบริษัทเสมอ
+                    const rowCount = subKeys.length + (showSubtotal ? 1 : 0);
+                    
+                    let compSumE = 0, compSumF = 0, compSumG = 0, compSumH = 0;
+
+                    subKeys.forEach((subKey, subIdx) => {
+                        const item = companyGroups[comp][subKey];
+                        const isFirstRow = subIdx === 0;
+                        const trClass = isFirstRow ? "border-t border-gray-300 hover:bg-gray-50" : "border-t border-gray-100 border-dashed hover:bg-gray-50";
+                        
+                        compSumE += item.e;
+                        compSumF += item.f;
+                        compSumG += item.g;
+                        compSumH += item.h;
+
+                        tableHTML += `<tr class="${trClass}">`;
+                        
+                        if (isFirstRow) {
+                            tableHTML += `<td class="px-3 py-2 text-center text-gray-600 align-top border-r border-gray-200 bg-white" rowspan="${rowCount}">${index++}</td>`;
+                            tableHTML += `<td class="px-3 py-2 text-gray-800 align-top border-r border-gray-200 bg-white" style="max-width: 50mm; white-space: normal; word-break: break-word;" rowspan="${rowCount}">${comp}</td>`;
+                        }
+
+                        tableHTML += `<td class="px-3 py-1.5 text-gray-800 whitespace-nowrap align-top text-center">${item.deliveryNote}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-gray-800 whitespace-normal align-top" style="min-width: 50mm;">${item.cat}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-gray-800 whitespace-nowrap align-top text-center">${item.date}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-gray-800 whitespace-nowrap align-top text-center">${item.statusDate}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-right text-gray-800 align-top">${formatNumber(item.e)}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-right text-gray-800 align-top">${formatNumber(item.f)}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-right text-gray-800 align-top">${formatNumber(item.g)}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-right text-blue-700 font-semibold align-top">${formatNumber(item.h)}</td>`;
+                        tableHTML += `</tr>`;
+                    });
+
+                    if (showSubtotal) {
+                        tableHTML += `<tr class="bg-blue-50 border-t border-blue-200 font-semibold text-gray-800">`;
+                        tableHTML += `<td colspan="4" class="px-3 py-1.5 text-right align-top">รวมยอดบริษัท</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-right text-gray-900 align-top">${formatNumber(compSumE)}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-right text-gray-900 align-top">${formatNumber(compSumF)}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-right text-gray-900 align-top">${formatNumber(compSumG)}</td>`;
+                        tableHTML += `<td class="px-3 py-1.5 text-right text-blue-800 align-top">${formatNumber(compSumH)}</td>`;
+                        tableHTML += `</tr>`;
+                    }
+                });
+                tableHTML += `</tbody>`;
+
+                tableHTML += `
+                    <tfoot class="bg-gray-200 border-t-4 border-gray-300 font-bold text-gray-900">
+                        <tr>
+                            <td colspan="6" class="px-3 py-2 text-right text-[12.6px] border-r border-gray-300">รวมยอดทั้งสิ้น</td>
+                            <td class="px-3 py-2 text-right text-[12.6px]">${formatNumber(sumGrandE)}</td>
+                            <td class="px-3 py-2 text-right text-[12.6px]">${formatNumber(sumGrandF)}</td>
+                            <td class="px-3 py-2 text-right text-[12.6px]">${formatNumber(sumGrandG)}</td>
+                            <td class="px-3 py-2 text-right text-[12.6px] text-blue-900">${formatNumber(sumGrandH)}</td>
+                        </tr>
+                    </tfoot>`;
+            }
+            tableHTML += `</table></div>`;
+            return tableHTML;
+        }
+
+        function renderUI() {
+            const container = document.getElementById('contentContainer');
+
+            let headerHTML = `
+              
+            `;
+
+            let contentHTML = '';
+            if (isLoadingData7H) contentHTML = '<div class="text-center text-blue-500 py-8">กำลังโหลดข้อมูลรายงาน...</div>';
+            else if (appData7H.length > 0) {
+                const uniqueCategoriesSet = new Set();
+                const uniqueStatusesSet = new Set();
+                appData7H.forEach(row => {
+                    if (parseNumberValue(row[4]) === 0 && parseNumberValue(row[5]) === 0 && parseNumberValue(row[6]) === 0 && parseNumberValue(row[7]) === 0) return;
+                    uniqueCategoriesSet.add(String(row[12] || '').trim() || 'ไม่ระบุหมวดหมู่');
+                    uniqueStatusesSet.add(String(row[22] || '').trim() || 'ไม่ระบุสถานะ');
+                });
+                currentAvailableCategories7H = [...uniqueCategoriesSet].sort();
+                currentAvailableStatuses7H = [...uniqueStatusesSet].sort();
+
+                if (!window.report7HInitialized) { 
+                    selectedCategories_forReport7H = []; 
+                    selectedStatuses_forReport7H = []; 
+                    window.report7HInitialized = true; 
+                }
+
+                let controlHTML = `
+                    <div class="flex flex-col justify-between items-start mb-6 gap-4 no-print border-t border-gray-200 pt-6">
+                        <div class="w-full flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                            <div class="flex-1 w-full">
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                                            <label class="text-gray-700 font-medium min-w-[120px]">เลือกค่า (หมวดหมู่):</label>
+                                            <div class="relative inline-block text-left w-full sm:w-auto">
+                                                <button type="button" id="catDropdownBtn7H" onclick="toggleReport7HDropdown()" class="border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 shadow-sm flex items-center justify-between w-full sm:w-80 outline-none">
+                                                    <span class="truncate">${selectedCategories_forReport7H.length > 0 ? selectedCategories_forReport7H.join(', ') : '-- กรุณาเลือกหมวดหมู่ --'}</span>
+                                                </button>
+                                                <div id="catDropdown7H" class="${report7HDropdownOpen ? '' : 'hidden'} origin-top-right absolute left-0 mt-2 w-full sm:w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
+                                                    <div class="sticky top-0 z-10 bg-white rounded-t-md shadow-sm">
+                                                        <div class="px-3 py-2 border-b border-gray-200 flex justify-between bg-gray-50"><button type="button" onclick="selectAllCategories7H()" class="text-xs font-semibold text-blue-600">เลือกทั้งหมด</button><button type="button" onclick="clearAllCategories7H()" class="text-xs font-semibold text-red-600">ล้าง</button></div>
+                                                        <div class="p-2 border-b border-gray-200"><input type="text" placeholder="พิมพ์ค้นหาค่า..." oninput="filterDropdownOptions('catListContainer7H', this.value)" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none"></div>
+                                                    </div>
+                                                    <div id="catListContainer7H" class="py-1 max-h-48 overflow-y-auto px-3">
+                                                        ${currentAvailableCategories7H.length > 0 ? currentAvailableCategories7H.map(cat => `<label class="flex items-center py-2 cursor-pointer border-b border-gray-100 last:border-0"><input type="checkbox" value="${cat}" ${selectedCategories_forReport7H.includes(cat) ? 'checked' : ''} onchange="updateReport7HCategoryFilter(this.value, this.checked)" class="w-4 h-4 text-blue-600 border-gray-300 rounded mr-3"><span class="text-sm text-gray-700">${cat}</span></label>`).join('') : '<div class="py-2 text-sm text-gray-500">ไม่พบหมวดหมู่</div>'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                                            <label class="text-gray-700 font-medium min-w-[120px]">เลือกสถานะ:</label>
+                                            <div class="relative inline-block text-left w-full sm:w-auto">
+                                                <button type="button" id="statusDropdownBtn7H" onclick="toggleStatusDropdown()" class="border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 shadow-sm flex items-center justify-between w-full sm:w-80 outline-none">
+                                                    <span class="truncate">${selectedStatuses_forReport7H.length > 0 ? selectedStatuses_forReport7H.join(', ') : '-- กรุณาเลือกสถานะ --'}</span>
+                                                </button>
+                                                <div id="statusDropdown7H" class="${statusDropdownOpen ? '' : 'hidden'} origin-top-right absolute left-0 mt-2 w-full sm:w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
+                                                    <div class="sticky top-0 z-10 bg-white rounded-t-md shadow-sm">
+                                                        <div class="px-3 py-2 border-b border-gray-200 flex justify-between bg-gray-50"><button type="button" onclick="selectAllStatuses7H()" class="text-xs font-semibold text-blue-600">เลือกทั้งหมด</button><button type="button" onclick="clearAllStatuses7H()" class="text-xs font-semibold text-red-600">ล้าง</button></div>
+                                                        <div class="p-2 border-b border-gray-200"><input type="text" placeholder="พิมพ์ค้นหาสถานะ..." oninput="filterDropdownOptions('statusListContainer7H', this.value)" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none"></div>
+                                                    </div>
+                                                    <div id="statusListContainer7H" class="py-1 max-h-48 overflow-y-auto px-3">
+                                                        ${currentAvailableStatuses7H.length > 0 ? currentAvailableStatuses7H.map(st => `<label class="flex items-center py-2 cursor-pointer border-b border-gray-100 last:border-0"><input type="checkbox" value="${st}" ${selectedStatuses_forReport7H.includes(st) ? 'checked' : ''} onchange="updateReport7HStatusFilter(this.value, this.checked)" class="w-4 h-4 text-blue-600 border-gray-300 rounded mr-3"><span class="text-sm text-gray-700">${st}</span></label>`).join('') : '<div class="py-2 text-sm text-gray-500">ไม่พบสถานะ</div>'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr class="border-gray-200">
+                                    <div class="flex flex-col lg:flex-row gap-4 lg:items-center">
+                                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1">
+                                            <label class="text-gray-700 font-medium min-w-[120px] text-sm">วันที่ตรวจรับ (ตั้งแต่):</label>
+                                            <input type="date" value="${startDate_receive_forReport7H}" onchange="updateReport7HDates('receive_start', this.value)" class="border border-gray-300 rounded px-2 py-1.5 outline-none w-full sm:w-auto text-sm">
+                                            <label class="text-gray-700 font-medium mx-1 text-sm">ถึง:</label>
+                                            <input type="date" value="${endDate_receive_forReport7H}" onchange="updateReport7HDates('receive_end', this.value)" class="border border-gray-300 rounded px-2 py-1.5 outline-none w-full sm:w-auto text-sm">
+                                        </div>
+                                        <div class="hidden lg:block w-px h-8 bg-gray-300 mx-2"></div>
+                                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1">
+                                            <label class="text-gray-700 font-medium min-w-[120px] text-sm">วันที่ชำระ (ตั้งแต่):</label>
+                                            <input type="date" value="${startDate_pay_forReport7H}" onchange="updateReport7HDates('pay_start', this.value)" class="border border-gray-300 rounded px-2 py-1.5 outline-none w-full sm:w-auto text-sm">
+                                            <label class="text-gray-700 font-medium mx-1 text-sm">ถึง:</label>
+                                            <input type="date" value="${endDate_pay_forReport7H}" onchange="updateReport7HDates('pay_end', this.value)" class="border border-gray-300 rounded px-2 py-1.5 outline-none w-full sm:w-auto text-sm">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 mt-4 md:mt-0 h-fit"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg> พิมพ์รายงาน</button>
+                        </div>
+                    </div>
+                `;
+
+                contentHTML = controlHTML + '<div id="tableDataContainer7H">' + generateTableHTML7H() + '</div>';
+
+            } else {
+                contentHTML = '<div class="text-center text-gray-500 py-8">ไม่พบข้อมูล หรือข้อมูลไม่ถูกต้อง</div>';
+            }
+
+            container.innerHTML = headerHTML + contentHTML;
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => { loadData(); });
+    </script>
+</body>
+</html>
+
+    </template>
+
     <template id="temp_ap_14">
 <!DOCTYPE html>
 <html lang="th">
@@ -5343,6 +5709,574 @@
     </script>
 </body>
 </html>
+    </template>
+
+    <template id="temp_ap_fiscal_year">
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>14. รายงานแยกประเภท คงเหลือปีงบประมาณ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html { font-size: 90%; }
+        body { 
+            font-family: 'Noto Sans Thai', sans-serif; 
+            background-color: #f3f4f6; 
+        }
+        .print-only { display: none; }
+        
+        @media print {
+            @page { size: A4 landscape; margin: 10mm; }
+            body, html { 
+                background-color: white; 
+                height: auto !important; 
+                overflow: visible !important; 
+                display: block !important; 
+            }
+            .h-screen, .overflow-hidden, .overflow-auto, .overflow-x-auto, .flex-1, main, #printArea, #contentContainer {
+                height: auto !important; 
+                overflow: visible !important; 
+                display: block !important; 
+                position: static !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                page-break-inside: auto !important; 
+                break-inside: auto !important;
+            }
+            .shadow-sm { box-shadow: none !important; }
+            .rounded-lg { border-radius: 0 !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .print-full-width { 
+                width: 100% !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                box-shadow: none !important; 
+            }
+            table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                page-break-inside: auto; 
+            }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            thead { display: table-header-group; }
+            tfoot { display: table-footer-group; }
+            th, td { 
+                border: 1px solid #000 !important; 
+                padding: 2mm 3px !important; 
+                height: auto !important; 
+                line-height: 1 !important; 
+                font-size: 12.5px !important; 
+            }
+            th { 
+                background-color: #f3f4f6 !important; 
+                -webkit-print-color-adjust: exact; 
+                font-weight: bold !important; 
+            }
+            td { font-weight: normal !important; }
+            td.font-medium, td.font-semibold, td.font-bold { font-weight: normal !important; }
+            tfoot td { 
+                background-color: #f3f4f6 !important; 
+                -webkit-print-color-adjust: exact; 
+                font-weight: bold !important; 
+            }
+            .print-fixed-table { 
+                table-layout: fixed !important; 
+                width: 100% !important; 
+                max-width: 100% !important; 
+                margin: 0 auto !important; 
+            }
+            .print-fixed-table th, .print-fixed-table td { 
+                white-space: normal !important; 
+                word-wrap: break-word !important; 
+                overflow-wrap: break-word !important; 
+            }
+            .print-truncate { 
+                white-space: nowrap !important; 
+                overflow: hidden !important; 
+                text-overflow: ellipsis !important; 
+                word-wrap: normal !important; 
+                overflow-wrap: normal !important; 
+            }
+        }
+        
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+    <header class="bg-blue-800 text-white p-4 shadow-md no-print shrink-0 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <a href="https://financenangrong.github.io/financial-system/" class="text-white hover:bg-blue-700 focus:outline-none p-2 rounded transition-colors flex items-center gap-1" title="ย้อนกลับ">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                <span class="hidden sm:inline font-medium text-sm">ย้อนกลับ</span>
+            </a>
+            <img src="https://github.com/FinanceNangRong/financial-system/raw/main/NRHOS.png" alt="NRHOS Logo" class="h-8 w-auto bg-white rounded-sm p-0.5" onerror="this.style.display='none'">
+            <h1 class="text-1xl font-bold">14. รายงานแยกประเภท คงเหลือปีงบประมาณ</h1>
+        </div>
+        <div id="statusBadge" class="text-sm px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 font-medium flex items-center gap-2">กำลังโหลดข้อมูล...</div>
+    </header>
+    
+    <main class="flex-1 bg-white overflow-auto p-6 print-full-width" id="printArea">
+        <div id="contentContainer" class="w-full mx-auto">
+            <div id="filterSection" class="hidden flex-col justify-between items-start mb-6 gap-4 no-print">
+                <div class="w-full flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                    <div class="flex-1 w-full">
+                        
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm space-y-4">
+                            <div class="flex flex-col sm:flex-row gap-6">
+                                <div class="flex flex-col items-start gap-2 flex-1">
+                                    <label class="text-gray-700 font-medium">เลือกค่า (หมวดหมู่):</label>
+                                    <div class="relative text-left w-full sm:w-96">
+                                        <button type="button" id="catDropdownBtn12" onclick="toggleReport12Dropdown()" class="border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 shadow-sm flex items-center justify-between w-full focus:outline-none">
+                                            <span id="catDropdownBtnText" class="truncate">-- กรุณาเลือกหมวดหมู่ --</span>
+                                            <svg class="-mr-1 ml-2 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                                        </button>
+                                        <div id="catDropdown12" class="hidden origin-top-left absolute left-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
+                                            <div class="sticky top-0 z-10 bg-white rounded-t-md shadow-sm">
+                                                <div class="px-3 py-2 border-b border-gray-200 flex justify-between bg-gray-50 rounded-t-md">
+                                                    <button type="button" onclick="selectAllCategories12()" class="text-xs font-semibold text-blue-600 hover:text-blue-800">เลือกทั้งหมด</button>
+                                                    <button type="button" onclick="clearAllCategories12()" class="text-xs font-semibold text-red-600 hover:text-red-800">ล้าง</button>
+                                                </div>
+                                                <div class="p-2 border-b border-gray-200">
+                                                    <input type="text" placeholder="พิมพ์ค้นหาค่า..." oninput="filterDropdownOptions('catListContainer12', this.value)" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm outline-none">
+                                                </div>
+                                            </div>
+                                            <div id="catListContainer12" class="py-1 max-h-64 overflow-y-auto px-3">
+                                                <!-- Checkboxes injected by JS -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-end mb-2 sm:mb-0 ml-auto">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4 md:mt-0 h-fit">
+                        <button onclick="exportToExcel()" class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded shadow flex items-center gap-2 whitespace-nowrap">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> ส่งออก Excel
+                        </button>
+                        <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 whitespace-nowrap">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg> พิมพ์รายงาน
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="tableContainer">
+                <div class="text-center text-gray-400 mt-20 no-print" id="loadingText">กำลังโหลดข้อมูลอัตโนมัติ กรุณารอสักครู่...</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-vY0-Ic04efRHyFptGVLR3UCipBUBhJiFSCWl_3RDAbQP6cUdQaz53D_1Sru3rg/pub?output=csv";
+        let appData = [];
+        
+        let selectedCategories_forReport12 = []; 
+        let currentAvailableCategories12 = []; 
+        let report12DropdownOpen = false;
+
+        function updateStatus(success) {
+            const badge = document.getElementById('statusBadge');
+            if (badge) {
+                badge.className = `text-sm px-3 py-1 rounded-full ${success ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'} font-medium flex items-center gap-2`;
+                badge.innerHTML = `<span class="relative flex h-3 w-3"><span class="relative inline-flex rounded-full h-3 w-3 ${success ? 'bg-emerald-500' : 'bg-red-500'}"></span></span>${success ? 'ข้อมูลพร้อมใช้งาน' : 'โหลดล้มเหลว'}`;
+            }
+        }
+
+        function parseNumberValue(v) {
+            if (!v) return 0;
+            if (typeof v === 'string') v = v.replace(/,/g, '');
+            const n = parseFloat(v);
+            return isNaN(n) ? 0 : n;
+        }
+
+        function formatNumber(n) {
+            const v = parseFloat(n);
+            return (isNaN(v) || v === 0) ? '0.00' : v.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function getJSDate(v) {
+            if (!v) return null;
+            if (typeof v === 'number') return new Date(new Date(Date.UTC(1899, 11, 30)).getTime() + v * 86400000);
+            
+            const p = String(v).trim().split(/[-/]/);
+            if (p.length === 3) {
+                let d = parseInt(p[0]), m = parseInt(p[1]) - 1, y = parseInt(p[2]);
+                if (p[0].length === 4) {
+                    y = parseInt(p[0]); m = parseInt(p[1]) - 1; d = parseInt(p[2]);
+                }
+                if (y < 100) y += y >= 50 ? 2500 : 2000;
+                if (y > 2400) y -= 543;
+                return new Date(y, m, d);
+            }
+            return isNaN(new Date(v).getTime()) ? null : new Date(v);
+        }
+
+        const parseDateForFilter = (s) => {
+            if (!s || String(s).trim() === '-' || String(s).trim() === '') return null;
+            let c = String(s).trim();
+            
+            const p = c.split(/[\/\-]/);
+            if (p.length === 3) {
+                let d = parseInt(p[0], 10), m = parseInt(p[1], 10) - 1, y = parseInt(p[2], 10);
+                if (p[0].length === 4) {
+                    y = parseInt(p[0], 10); m = parseInt(p[1], 10) - 1; d = parseInt(p[2], 10);
+                }
+                if (y < 100) y += y > 40 ? 2500 : 2000;
+                if (y >= 2400) y -= 543;
+                let dObj = new Date(y, m, d);
+                if (!isNaN(dObj.getTime())) return dObj.getTime();
+            }
+            
+            const tS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+            const tF = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+            const tM = c.match(/(\d{1,2})\s+([ก-๙\.]+)\s+(\d{2,4})/);
+            
+            if (tM) {
+                let d = parseInt(tM[1], 10), mo = tM[2], y = parseInt(tM[3], 10);
+                let m = tS.findIndex(t => mo.includes(t));
+                if (m === -1) m = tF.findIndex(t => mo.includes(t));
+                if (m === -1) m = 0;
+                if (y < 100) y += y > 40 ? 2500 : 2000;
+                if (y >= 2400) y -= 543;
+                return new Date(y, m, d).getTime();
+            }
+            
+            if (!isNaN(c) && Number(c) > 10000) {
+                return new Date(Date.UTC(1899, 11, 30)).getTime() + Number(c) * 86400000;
+            }
+            
+            let dObj = new Date(c);
+            return isNaN(dObj.getTime()) ? null : dObj.getTime();
+        };
+
+        function formatThaiDate(v, s = false) {
+            if (!v) return '-';
+            let d, m, y;
+            if (typeof v === 'number') {
+                const doObj = new Date(new Date(Date.UTC(1899, 11, 30)).getTime() + v * 86400000);
+                d = doObj.getUTCDate();
+                m = doObj.getUTCMonth() + 1;
+                y = doObj.getUTCFullYear();
+                if (y < 2500) y += 543;
+            } else {
+                let ds = String(v).trim();
+                const p = ds.split(/[-/]/);
+                if (p.length === 3) {
+                    d = parseInt(p[0]); m = parseInt(p[1]); y = parseInt(p[2]);
+                    if (p[0].length === 4) {
+                        y = parseInt(p[0]); m = parseInt(p[1]); d = parseInt(p[2]);
+                    }
+                    if (!isNaN(d) && !isNaN(m) && !isNaN(y)) {
+                        if (y < 100) y += y >= 50 ? 2500 : 2000;
+                        if (y < 2500) y += 543;
+                    } else return ds;
+                } else return ds;
+            }
+            return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${s ? String(y).slice(-2) : y}`;
+        }
+
+        function filterDropdownOptions(i, t) {
+            const c = document.getElementById(i);
+            if (!c) return;
+            const ls = c.getElementsByTagName('label');
+            const f = t.toLowerCase().replace(/\s+/g, '');
+            for (let j = 0; j < ls.length; j++) {
+                const s = ls[j].querySelector('span');
+                if (s) {
+                    ls[j].style.display = (s.textContent || s.innerText).toLowerCase().replace(/\s+/g, '').indexOf(f) > -1 ? "" : "none";
+                }
+            }
+        }
+
+        function enrichData(rows) {
+            return rows.map(r => {
+                r._e = parseNumberValue(r[4]);
+                r._f = parseNumberValue(r[5]);
+                r._g = parseNumberValue(r[6]);
+                r._h = parseNumberValue(r[7]);
+                r._compC = String(r[2] || '').trim();
+                r._valM = String(r[12] || '').trim() || 'ไม่ระบุหมวดหมู่';
+                
+                r._dateRecTs = parseDateForFilter(r[1]);
+                r._datePayTs = parseDateForFilter(r[8]);
+                
+                return r;
+            });
+        }
+
+        function getFiscalYear(dateTs) {
+            if (!dateTs) return null;
+            const d = new Date(dateTs);
+            let y = d.getFullYear(); 
+            // ปีงบประมาณไทย เริ่ม 1 ตุลาคม
+            if (d.getMonth() >= 9) y += 1; 
+            return String(y + 543);
+        }
+
+        function toggleReport12Dropdown() {
+            report12DropdownOpen = !report12DropdownOpen;
+            const dd = document.getElementById('catDropdown12');
+            if (dd) {
+                report12DropdownOpen ? dd.classList.remove('hidden') : dd.classList.add('hidden');
+            }
+        }
+
+        function updateCategoryButtonText() {
+            const btnText = document.getElementById('catDropdownBtnText');
+            if (btnText) {
+                btnText.textContent = selectedCategories_forReport12.length > 0 
+                    ? selectedCategories_forReport12.join(', ') 
+                    : '-- กรุณาเลือกหมวดหมู่ --';
+            }
+        }
+
+        function selectAllCategories12() { 
+            selectedCategories_forReport12 = [...currentAvailableCategories12]; 
+            const checkboxes = document.querySelectorAll('.category-checkbox');
+            checkboxes.forEach(cb => cb.checked = true);
+            updateCategoryButtonText();
+            renderTable(); 
+        }
+
+        function clearAllCategories12() { 
+            selectedCategories_forReport12 = []; 
+            const checkboxes = document.querySelectorAll('.category-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            updateCategoryButtonText();
+            renderTable(); 
+        }
+
+        function updateReport12CategoryFilter(val, isChecked) {
+            if (isChecked) { 
+                if (!selectedCategories_forReport12.includes(val)) selectedCategories_forReport12.push(val); 
+            } else { 
+                selectedCategories_forReport12 = selectedCategories_forReport12.filter(item => item !== val); 
+            }
+            updateCategoryButtonText();
+            renderTable();
+        }
+
+        window.addEventListener('click', function(e) {
+            const dd = document.getElementById('catDropdown12');
+            const btn = document.getElementById('catDropdownBtn12');
+            if (dd && btn && report12DropdownOpen && !dd.contains(e.target) && !btn.contains(e.target)) {
+                report12DropdownOpen = false; 
+                dd.classList.add('hidden');
+            }
+        });
+
+        function setupFilters() {
+            const uniqueCategoriesSet = new Set();
+            
+            appData.forEach(row => {
+                if (row._e === 0 && row._f === 0 && row._g === 0 && row._h === 0) return;
+                uniqueCategoriesSet.add(row._valM);
+            });
+            
+            currentAvailableCategories12 = [...uniqueCategoriesSet].sort();
+
+            if (typeof window.report12Initialized === 'undefined') {
+                selectedCategories_forReport12 = [];
+                window.report12Initialized = true;
+            }
+
+            const catList = document.getElementById('catListContainer12');
+            if(catList) {
+                if (currentAvailableCategories12.length > 0) {
+                    catList.innerHTML = currentAvailableCategories12.map(cat => `
+                        <label class="flex items-center py-2 cursor-pointer hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                            <input type="checkbox" value="${cat}" ${selectedCategories_forReport12.includes(cat) ? 'checked' : ''} class="category-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded mr-3">
+                            <span class="text-sm text-gray-700">${cat}</span>
+                        </label>
+                    `).join('');
+                    
+                    const checkboxes = catList.querySelectorAll('.category-checkbox');
+                    checkboxes.forEach(cb => {
+                        cb.addEventListener('change', (e) => {
+                            updateReport12CategoryFilter(e.target.value, e.target.checked);
+                        });
+                    });
+                } else {
+                    catList.innerHTML = '<div class="py-2 text-sm text-gray-500">ไม่พบหมวดหมู่</div>';
+                }
+            }
+
+            document.getElementById('filterSection').classList.remove('hidden');
+            document.getElementById('filterSection').classList.add('flex');
+            updateCategoryButtonText();
+        }
+
+        function renderTable() {
+            const container = document.getElementById('tableContainer');
+            if (!container) return;
+
+            // กรองข้อมูลพื้นฐานตามหมวดหมู่ที่เลือก
+            let baseFilteredData = appData.filter(row => {
+                if (row._e === 0 && row._f === 0 && row._g === 0 && row._h === 0) return false;
+                if (selectedCategories_forReport12.length === 0) return false;
+                if (!selectedCategories_forReport12.includes(row._valM)) return false;
+                return true;
+            });
+
+            if (selectedCategories_forReport12.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 py-8 bg-white rounded-lg border border-gray-200 shadow-sm mt-4">กรุณาเลือกหมวดหมู่ที่ต้องการแสดง</div>`;
+                return;
+            }
+
+            // หาปีงบประมาณทั้งหมดที่มีในข้อมูลที่กรองแล้ว
+            const uniqueYearsSet = new Set();
+            baseFilteredData.forEach(row => {
+                const fy = getFiscalYear(row._dateRecTs);
+                if (fy) uniqueYearsSet.add(fy);
+            });
+            // เรียงลำดับปีงบประมาณจากน้อยไปมาก (เช่น 2565, 2566, 2567)
+            const uniqueYears = [...uniqueYearsSet].sort((a, b) => Number(a) - Number(b));
+
+            if (uniqueYears.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 py-8 bg-white rounded-lg border border-gray-200 shadow-sm mt-4">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</div>`;
+                return;
+            }
+
+            // จัดเตรียมโครงสร้างข้อมูล Pivot
+            const pivotData = {};
+            let grandTotals = { expPerYear: {}, totalExp: 0, totalBud: 0 };
+            uniqueYears.forEach(y => grandTotals.expPerYear[y] = 0);
+
+            baseFilteredData.forEach(row => {
+                const cat = row._valM;
+                const fy = getFiscalYear(row._dateRecTs);
+
+                if (!pivotData[cat]) {
+                    pivotData[cat] = { expPerYear: {}, totalExp: 0, totalBud: 0 };
+                    uniqueYears.forEach(y => pivotData[cat].expPerYear[y] = 0);
+                }
+                
+                // เก็บยอดงบประมาณรวม
+                pivotData[cat].totalBud += row._g || 0;
+                grandTotals.totalBud += row._g || 0;
+
+                // เก็บยอดเบิกจ่ายแยกตามปี
+                if (fy && pivotData[cat].expPerYear[fy] !== undefined) {
+                    const exp = row._h || 0;
+                    pivotData[cat].expPerYear[fy] += exp;
+                    pivotData[cat].totalExp += exp;
+                    
+                    grandTotals.expPerYear[fy] += exp;
+                    grandTotals.totalExp += exp;
+                }
+            });
+
+            let printTitle = `รายงานแยกประเภท เปรียบเทียบปีงบประมาณ`;
+
+            // สร้างหัวคอลัมน์ปีงบประมาณ
+            let yearHeaders = '';
+            uniqueYears.forEach(y => {
+                yearHeaders += `<th class="px-2 py-3 font-semibold text-center border border-gray-300 w-[110px] min-w-[110px] bg-blue-100 print:static print:bg-blue-50">ปี ${y}</th>`;
+            });
+
+            let html = `
+                <div class="mb-10 last:mb-0">
+                    <h3 class="text-xl font-bold text-center mb-4 print-only">${printTitle}</h3>
+                    <div class="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm" style="max-height: 70vh;">
+                        <table class="min-w-full text-sm text-left border-collapse print-fixed-table" style="table-layout: auto;">
+                            <thead class="bg-blue-100 text-blue-900 border-b-2 border-gray-300">
+                                <tr>
+                                    <th class="px-3 py-3 font-semibold text-center border border-gray-300 w-[47px] min-w-[47px] sticky top-0 left-0 z-30 bg-blue-100 print:static print:bg-blue-50">ลำดับ</th>
+                                    <th class="px-4 py-3 font-semibold text-center border border-gray-300 w-[250px] min-w-[250px] sticky top-0 left-[47px] z-30 bg-blue-100 print:static print:bg-blue-50">ค่า (หมวดหมู่)</th>
+                                    ${yearHeaders}
+                                    <th class="px-3 py-3 font-bold text-center border border-gray-300 w-[120px] min-w-[120px] sticky top-0 z-20 bg-blue-200 print:static print:bg-blue-100">รวมเบิกจ่ายทั้งหมด</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+            `;
+
+            const catKeys = Object.keys(pivotData).sort();
+
+            let index = 1;
+            catKeys.forEach(catKey => {
+                const rowData = pivotData[catKey];
+                const balance = rowData.totalBud - rowData.totalExp;
+                html += `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-3 py-2 text-center text-gray-500 border border-gray-200 sticky left-0 z-10 bg-white print:static">${index++}</td>
+                        <td class="px-4 py-2 text-gray-800 font-medium border border-gray-200 sticky left-[47px] z-10 bg-white print:static w-[250px] min-w-[250px]">${catKey}</td>
+                `;
+                
+                uniqueYears.forEach(y => {
+                    const val = rowData.expPerYear[y];
+                    html += `<td class="px-2 py-2 text-right text-gray-700 border border-gray-200 w-[110px] min-w-[110px]">${val !== 0 ? formatNumber(val) : '-'}</td>`;
+                });
+                
+                html += `<td class="px-2 py-2 text-right text-blue-700 font-bold border border-gray-200 bg-blue-50/30 print:bg-transparent w-[120px] min-w-[120px]">${formatNumber(rowData.totalExp)}</td>`;
+                html += `</tr>`;
+            });
+
+            const totalBalance = grandTotals.totalBud - grandTotals.totalExp;
+            
+            html += `
+                            </tbody>
+                            <tfoot class="bg-gray-100 border-t-4 border-gray-300 font-bold text-gray-900 sticky bottom-0 z-30">
+                                <tr>
+                                    <td colspan="2" class="px-4 py-3 text-right border border-gray-300 sticky left-0 z-30 bg-gray-100 print:static">รวมยอดทั้งสิ้น</td>
+            `;
+            
+            uniqueYears.forEach(y => {
+                const val = grandTotals.expPerYear[y];
+                html += `<td class="px-2 py-3 text-right border border-gray-300 bg-gray-100 w-[110px] min-w-[110px]">${val !== 0 ? formatNumber(val) : '-'}</td>`;
+            });
+            
+            html += `<td class="px-2 py-3 text-right text-blue-900 border border-gray-300 bg-gray-200 print:bg-transparent w-[120px] min-w-[120px]">${formatNumber(grandTotals.totalExp)}</td>`;
+            html += `</tr></tfoot>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // Init App
+        document.addEventListener('DOMContentLoaded', () => {
+            Papa.parse(GOOGLE_SHEET_CSV_URL, {
+                download: true, 
+                header: false,
+                complete: function(results) {
+                    if(results.data.length < 5) return updateStatus(false);
+                    // ข้ามหัวตาราง 4 แถวแรก
+                    appData = enrichData(results.data.slice(4).filter(r => r.length > 0 && r.some(c => c !== "")));
+                    updateStatus(true);
+                    setupFilters();
+                    renderTable();
+                }, 
+                error: function() { 
+                    updateStatus(false); 
+                }
+            });
+        });
+
+        function exportToExcel() {
+            const table = document.querySelector('table');
+            if (!table) return;
+            // ใช้ไลบรารี XLSX แปลง HTML Table ไปเป็น Excel Sheet
+            const wb = XLSX.utils.table_to_book(table, {sheet: "Sheet1"});
+            // ดาวน์โหลดไฟล์
+            XLSX.writeFile(wb, "รายงานเปรียบเทียบปีงบประมาณ.xlsx");
+        }
+    </script>
+</body>
+</html>
+
     </template>
 
     <template id="temp_payment_pay">
@@ -12119,7 +13053,7 @@
                     if (activeMenuId === 'ap') {
                         if (index === 0) { targetTemplateId = 'temp_ap_1'; isEmbedded = true; }
                         else if (index === 1) { targetTemplateId = 'temp_ap_2'; isEmbedded = true; }
-                        else if (index === 2) { targetTemplateId = 'temp_ap_14'; isEmbedded = true; }
+                        else if (index === 2) { targetTemplateId = 'temp_ap_3'; isEmbedded = true; }
                         else if (index === 3) { targetTemplateId = 'temp_ap_4'; isEmbedded = true; }
                         else if (index === 4) { targetTemplateId = 'temp_ap_agency'; isEmbedded = true; }
                         else if (index === 5) { targetTemplateId = 'temp_ap_company'; isEmbedded = true; }
@@ -12130,7 +13064,7 @@
                         else if (index === 10) { targetTemplateId = 'temp_ap_11'; isEmbedded = true; }
                         else if (index === 11) { targetTemplateId = 'temp_ap_paid'; isEmbedded = true; }
                         else if (index === 12) { targetTemplateId = 'temp_ap_13'; isEmbedded = true; }
-                        else if (index === 13) { targetTemplateId = 'temp_ap_9'; isEmbedded = true; } // placeholder
+                        else if (index === 13) { targetTemplateId = 'temp_ap_fiscal_year'; isEmbedded = true; }
                     } else if (activeMenuId === 'payment') {
                         if (index === 2) { targetTemplateId = 'temp_payment_pay'; isEmbedded = true; }
                     } else if (activeMenuId === 'receive') {
